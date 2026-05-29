@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#1e2d3e"/>
+  <rect x="60" y="140" width="392" height="240" rx="40" fill="#e8a020"/>
+  <rect x="80" y="160" width="352" height="180" rx="28" fill="#1e2d3e"/>
+  <!-- Windows -->
+  <rect x="100" y="180" width="80" height="60" rx="10" fill="#7ec8e3"/>
+  <rect x="216" y="180" width="80" height="60" rx="10" fill="#7ec8e3"/>
+  <rect x="332" y="180" width="80" height="60" rx="10" fill="#7ec8e3"/>
+  <!-- Body bottom -->
+  <rect x="80" y="270" width="352" height="50" rx="0" fill="#1e2d3e"/>
+  <!-- Door -->
+  <rect x="310" y="270" width="70" height="50" rx="0" fill="#2a3f56"/>
+  <!-- Wheels -->
+  <circle cx="150" cy="380" r="50" fill="#1a1a2e"/>
+  <circle cx="150" cy="380" r="28" fill="#e8a020"/>
+  <circle cx="150" cy="380" r="12" fill="#1a1a2e"/>
+  <circle cx="362" cy="380" r="50" fill="#1a1a2e"/>
+  <circle cx="362" cy="380" r="28" fill="#e8a020"/>
+  <circle cx="362" cy="380" r="12" fill="#1a1a2e"/>
+  <!-- Front -->
+  <rect x="420" y="160" width="40" height="120" rx="20" fill="#e8a020"/>
+  <!-- Headlight -->
+  <rect x="424" y="200" width="28" height="20" rx="6" fill="#fffde7"/>
+</svg>
