@@ -428,9 +428,36 @@ function parseKML(text) {
   Object.keys(passengersByStop).forEach(stopLbl => {
     if (stopMap[stopLbl]) {
       stopMap[stopLbl].passengers = passengersByStop[stopLbl];
-      // Barrio hint from first passenger
       const firstBarrio = passengersByStop[stopLbl].find(p => p.barrio)?.barrio || '';
       stopMap[stopLbl].barrio = firstBarrio;
+    }
+  });
+
+  // FALLBACK: if no passengers were assigned via placemarks, parse from stop description
+  // Format: "2 pasajeros: NOMBRE (DNI), NOMBRE (DNI)"
+  Object.values(stopMap).forEach(stop => {
+    if (stop.passengers.length === 0) {
+      // find original stop placemark description
+      pms.forEach(pm => {
+        const pmName = getText(pm, 'name');
+        const pmDesc = getText(pm, 'description');
+        const sm = pmName.match(/^Parada\s+(\d+)\s*:/i);
+        if (sm && parseInt(sm[1]) === stop.id) {
+          const paxMatch = pmDesc.match(/:\s*(.+)$/);
+          if (paxMatch) {
+            const paxStr = paxMatch[1];
+            const paxRe = /([A-Za-záéíóúÁÉÍÓÚñÑüÜ,\s]+?)\s*\((\d+)\)/g;
+            let m;
+            while ((m = paxRe.exec(paxStr)) !== null) {
+              stop.passengers.push({
+                name: toTitleCase(m[1].replace(/,/g,' ').replace(/\s+/g,' ').trim()),
+                dni:  formatDNI(m[2]),
+                barrio: ''
+              });
+            }
+          }
+        }
+      });
     }
   });
 
@@ -495,7 +522,13 @@ function resetApp() {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if (id === 'screen-overview' && mapOverview) setTimeout(()=>mapOverview.invalidateSize(),100);
+  setTimeout(() => {
+    if (id === 'screen-overview' && mapOverview) mapOverview.invalidateSize();
+    if (id === 'screen-stop') {
+      if (mapMiniP) mapMiniP.invalidateSize();
+      if (mapMiniL) mapMiniL.invalidateSize();
+    }
+  }, 150);
 }
 
 // ===== NOMINATIM =====
@@ -546,6 +579,7 @@ async function fetchOSRMRoute() {
 
 // ===== OVERVIEW MAP =====
 function buildOverviewMap() {
+  setTimeout(() => {
   mapOverview = L.map('map-overview', { zoomControl:true, attributionControl:true });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -569,6 +603,8 @@ function buildOverviewMap() {
 
   const bounds = L.latLngBounds(STOPS.filter(s=>s.lat&&s.lng).map(s=>[s.lat,s.lng]));
   mapOverview.fitBounds(bounds, {padding:[40,40]});
+  mapOverview.invalidateSize();
+  }, 200);
 }
 
 function addArrows(map, coords) {
@@ -694,17 +730,21 @@ function initMiniMap(containerId, lat, lng, label, isBase, which) {
   if (!container || !lat || !lng) return;
   if (which==='P' && mapMiniP) { mapMiniP.remove(); mapMiniP=null; }
   if (which==='L' && mapMiniL) { mapMiniL.remove(); mapMiniL=null; }
-  const m = L.map(container, { zoomControl:false, dragging:true, scrollWheelZoom:false, attributionControl:false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
-  m.setView([lat,lng],16);
-  if (routeCoords?.length>1) L.polyline(routeCoords,{color:'#1e2d3e',weight:4,opacity:0.55}).addTo(m);
-  const bg = isBase ? '#ef4444' : '#e8a020';
-  const icon = L.divIcon({
-    html:`<div style="width:40px;height:40px;border-radius:50%;background:${bg};color:white;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;font-family:Segoe UI,sans-serif;border:3px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.5);">${label}</div>`,
-    className:'', iconSize:[40,40], iconAnchor:[20,20]
-  });
-  L.marker([lat,lng],{icon}).addTo(m);
-  if (which==='P') mapMiniP=m; else mapMiniL=m;
+  // defer so container has layout dimensions
+  setTimeout(() => {
+    const m = L.map(container, { zoomControl:false, dragging:true, scrollWheelZoom:false, attributionControl:false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
+    m.setView([lat,lng],16);
+    if (routeCoords?.length>1) L.polyline(routeCoords,{color:'#1e2d3e',weight:4,opacity:0.55}).addTo(m);
+    const bg = isBase ? '#ef4444' : '#e8a020';
+    const icon = L.divIcon({
+      html:`<div style="width:40px;height:40px;border-radius:50%;background:${bg};color:white;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;font-family:Segoe UI,sans-serif;border:3px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.5);">${label}</div>`,
+      className:'', iconSize:[40,40], iconAnchor:[20,20]
+    });
+    L.marker([lat,lng],{icon}).addTo(m);
+    if (which==='P') mapMiniP=m; else mapMiniL=m;
+    m.invalidateSize();
+  }, 200);
 }
 
 // ===== PASSENGERS =====
