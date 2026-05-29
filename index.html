@@ -25,12 +25,12 @@
     .header { background:linear-gradient(135deg,var(--navy),var(--navy2)); color:white; padding:10px 18px; display:flex; align-items:center; gap:14px; flex-shrink:0; box-shadow:0 2px 12px rgba(0,0,0,0.3); z-index:100; }
     .header-logo { width:40px; height:40px; object-fit:contain; border-radius:10px; flex-shrink:0; }
     .header-info { flex:1; }
-    .header-title { font-size:20px; font-weight:700; }
-    .header-sub   { font-size:14px; opacity:0.7; margin-top:2px; }
+    .header-title { font-size:24px; font-weight:700; }
+    .header-sub   { font-size:16px; opacity:0.7; margin-top:2px; }
     .header-kpis  { display:flex; gap:10px; }
     .header-kpi   { background:rgba(255,255,255,0.12); border-radius:10px; padding:5px 14px; text-align:center; border:1px solid rgba(255,255,255,0.15); }
     .header-kpi-val { font-size:22px; font-weight:800; line-height:1; color:var(--amber); }
-    .header-kpi-lbl { font-size:11px; opacity:0.7; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+    .header-kpi-lbl { font-size:13px; opacity:0.7; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
 
     .screen { display:none; flex:1; overflow:hidden; flex-direction:column; }
     .screen.active { display:flex; }
@@ -68,18 +68,18 @@
     #map-overview { flex:1; min-height:0; }
     .overview-panel { background:var(--card); border-top:3px solid var(--amber); max-height:30vh; overflow-y:auto; flex-shrink:0; }
     .overview-panel-header { padding:12px 20px 10px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--card); z-index:2; }
-    .overview-panel-title { font-size:17px; font-weight:700; color:var(--navy); }
+    .overview-panel-title { font-size:20px; font-weight:700; color:var(--navy); }
     .btn-start { background:linear-gradient(135deg,var(--amber),var(--amber2)); color:white; border:none; border-radius:12px; padding:12px 32px; font-size:17px; font-weight:700; font-family:var(--font); cursor:pointer; box-shadow:0 3px 10px rgba(232,160,32,0.4); transition:transform 0.1s; }
     .btn-start:active { transform:scale(0.97); }
     .stop-list { padding:6px 16px 10px; }
     .stop-row { display:flex; align-items:center; gap:14px; padding:10px; border-radius:10px; cursor:pointer; transition:background 0.15s; }
     .stop-row:hover { background:#f7f9fc; }
     .stop-badge { width:40px; height:40px; background:var(--navy); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; flex-shrink:0; }
-    .stop-badge.final { background:var(--red); font-size:20px; }
+    .stop-badge.final { background:var(--red); font-size:24px; }
     .stop-row-info { flex:1; min-width:0; }
-    .stop-row-name { font-size:16px; font-weight:600; }
-    .stop-row-addr { font-size:13px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .stop-pax-badge { background:#eff6ff; color:var(--blue); border-radius:20px; padding:5px 14px; font-size:14px; font-weight:700; flex-shrink:0; }
+    .stop-row-name { font-size:19px; font-weight:600; }
+    .stop-row-addr { font-size:15px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .stop-pax-badge { background:#eff6ff; color:var(--blue); border-radius:20px; padding:5px 14px; font-size:16px; font-weight:700; flex-shrink:0; }
 
     /* ===== STOP VIEW ===== */
     #screen-stop { background:var(--bg); }
@@ -89,7 +89,7 @@
     .prog-step { flex-shrink:0; width:34px; height:10px; border-radius:5px; background:rgba(255,255,255,0.2); transition:background 0.3s; }
     .prog-step.done   { background:var(--green); }
     .prog-step.active { background:var(--amber); width:50px; }
-    .progress-label { text-align:center; color:rgba(255,255,255,0.8); font-size:13px; font-weight:600; margin-top:6px; letter-spacing:0.5px; }
+    .progress-label { text-align:center; color:rgba(255,255,255,0.8); font-size:15px; font-weight:600; margin-top:6px; letter-spacing:0.5px; }
 
     .stop-cols-wrap { display:flex; flex-direction:column; flex:1; overflow:hidden; min-height:0; }
     .stop-left-col  { display:flex; flex-direction:column; flex:1; overflow:hidden; min-height:0; }
@@ -102,15 +102,15 @@
     .stop-number-block { background:linear-gradient(135deg,var(--navy),var(--navy2)); color:white; padding:18px 24px; display:flex; align-items:center; gap:22px; }
     .stop-number-circle { width:80px; height:80px; background:var(--amber); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900; color:white; flex-shrink:0; box-shadow:0 3px 10px rgba(0,0,0,0.3); }
     .stop-number-circle.final { background:var(--red); font-size:30px; }
-    .stop-title { font-size:14px; text-transform:uppercase; letter-spacing:1.2px; opacity:0.65; }
-    .stop-name  { font-size:32px; font-weight:800; line-height:1.1; margin-top:4px; }
-    .stop-addr  { font-size:18px; opacity:0.85; margin-top:7px; }
+    .stop-title { font-size:16px; text-transform:uppercase; letter-spacing:1.2px; opacity:0.65; }
+    .stop-name  { font-size:38px; font-weight:800; line-height:1.1; margin-top:4px; }
+    .stop-addr  { font-size:22px; opacity:0.85; margin-top:7px; }
     .map-mini   { height:310px; border-radius:0 0 16px 16px; overflow:hidden; }
 
     .pax-card { background:var(--card); border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,0.08); flex:1; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
     .pax-header { padding:9px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .pax-title  { font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
-    .pax-count  { font-size:16px; font-weight:700; color:var(--navy); }
+    .pax-title  { font-size:18px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); }
+    .pax-count  { font-size:19px; font-weight:700; color:var(--navy); }
     .pax-count span { color:var(--green); }
     .pax-list { overflow-y:auto; padding:4px 12px; flex:1; }
     .pax-item { display:flex; align-items:center; gap:14px; padding:8px 10px; border-radius:12px; transition:background 0.15s; cursor:pointer; border-bottom:1px solid #f0f0f0; }
@@ -122,17 +122,17 @@
     .pax-avatar { width:50px; height:50px; border-radius:50%; background:#e8f0fe; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; font-weight:700; color:var(--navy); }
     .pax-item.boarded .pax-avatar { background:#dcfce7; color:var(--green); }
     .pax-info { flex:1; min-width:0; }
-    .pax-name   { font-size:20px; font-weight:700; line-height:1.2; text-transform:capitalize; }
-    .pax-dni    { font-size:14px; color:var(--muted); margin-top:3px; }
-    .pax-barrio { font-size:13px; color:var(--blue); background:#eff6ff; border-radius:6px; padding:3px 9px; margin-top:4px; display:inline-block; }
+    .pax-name   { font-size:24px; font-weight:700; line-height:1.2; text-transform:capitalize; }
+    .pax-dni    { font-size:17px; color:var(--muted); margin-top:3px; }
+    .pax-barrio { font-size:15px; color:var(--blue); background:#eff6ff; border-radius:6px; padding:3px 9px; margin-top:4px; display:inline-block; }
 
     .nav-buttons { display:flex; gap:10px; padding:10px 14px 14px; flex-shrink:0; background:var(--bg); }
-    .btn-nav { flex:1; padding:18px; border:none; border-radius:14px; font-size:18px; font-weight:700; font-family:var(--font); cursor:pointer; transition:transform 0.1s; display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn-nav { flex:1; padding:18px; border:none; border-radius:14px; font-size:22px; font-weight:700; font-family:var(--font); cursor:pointer; transition:transform 0.1s; display:flex; align-items:center; justify-content:center; gap:8px; }
     .btn-nav:active { transform:scale(0.97); }
     .btn-prev    { background:var(--card); color:var(--navy); border:2px solid var(--border); flex:0.55; }
     .btn-next    { background:linear-gradient(135deg,var(--navy),var(--navy2)); color:white; box-shadow:0 4px 14px rgba(30,45,62,0.35); }
     .btn-next.btn-finish { background:linear-gradient(135deg,var(--red),#dc2626); box-shadow:0 4px 14px rgba(239,68,68,0.4); }
-    .btn-overview{ background:var(--card); color:var(--navy); border:2px solid var(--border); flex:0.45; font-size:15px; }
+    .btn-overview{ background:var(--card); color:var(--navy); border:2px solid var(--border); flex:0.45; font-size:17px; }
     .btn-back-kml{ background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.3); border-radius:8px; padding:6px 12px; font-size:13px; font-family:var(--font); cursor:pointer; flex-shrink:0; }
 
     /* LANDSCAPE */
@@ -160,10 +160,10 @@
       .stop-card { flex-shrink:0; }
       .stop-number-block { padding:12px 14px; gap:12px; }
       .stop-number-circle { width:56px; height:56px; font-size:24px; }
-      .stop-number-circle.final { font-size:20px; }
+      .stop-number-circle.final { font-size:24px; }
       .stop-title { font-size:11px; }
-      .stop-name  { font-size:20px; }
-      .stop-addr  { font-size:13px; margin-top:3px; }
+      .stop-name  { font-size:24px; }
+      .stop-addr  { font-size:16px; margin-top:3px; }
 
       .pax-header { padding:8px 12px; }
       .pax-title  { font-size:15px; }
@@ -172,13 +172,13 @@
       .pax-item   { padding:10px 6px; gap:10px; }
       .pax-avatar { width:40px; height:40px; font-size:18px; }
       .pax-check  { width:34px; height:34px; font-size:18px; }
-      .pax-name   { font-size:19px; }
-      .pax-dni    { font-size:13px; margin-top:2px; }
+      .pax-name   { font-size:22px; }
+      .pax-dni    { font-size:16px; margin-top:2px; }
       .pax-barrio { font-size:12px; padding:2px 7px; }
 
       .nav-buttons { padding:8px 10px 10px; gap:8px; }
-      .btn-nav    { padding:13px; font-size:15px; border-radius:11px; }
-      .btn-overview { font-size:13px; }
+      .btn-nav    { padding:13px; font-size:18px; border-radius:11px; }
+      .btn-overview { font-size:16px; }
 
       .overview-panel { max-height:35vh; }
     }
@@ -579,7 +579,7 @@ async function fetchOSRMRoute() {
 
 // ===== OVERVIEW MAP =====
 function buildOverviewMap() {
-  setTimeout(() => {
+  const initOverview = () => {
   mapOverview = L.map('map-overview', { zoomControl:true, attributionControl:true });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -603,8 +603,14 @@ function buildOverviewMap() {
 
   const bounds = L.latLngBounds(STOPS.filter(s=>s.lat&&s.lng).map(s=>[s.lat,s.lng]));
   mapOverview.fitBounds(bounds, {padding:[40,40]});
-  mapOverview.invalidateSize();
-  }, 200);
+  setTimeout(() => mapOverview.invalidateSize(), 300);
+  };
+  const el = document.getElementById('map-overview');
+  if (el.offsetWidth > 0) { initOverview(); }
+  else {
+    const ro = new ResizeObserver(() => { if(el.offsetWidth>0){ ro.disconnect(); initOverview(); } });
+    ro.observe(el);
+  }
 }
 
 function addArrows(map, coords) {
@@ -730,8 +736,7 @@ function initMiniMap(containerId, lat, lng, label, isBase, which) {
   if (!container || !lat || !lng) return;
   if (which==='P' && mapMiniP) { mapMiniP.remove(); mapMiniP=null; }
   if (which==='L' && mapMiniL) { mapMiniL.remove(); mapMiniL=null; }
-  // defer so container has layout dimensions
-  setTimeout(() => {
+  const doInit = () => {
     const m = L.map(container, { zoomControl:false, dragging:true, scrollWheelZoom:false, attributionControl:false });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
     m.setView([lat,lng],16);
@@ -743,8 +748,13 @@ function initMiniMap(containerId, lat, lng, label, isBase, which) {
     });
     L.marker([lat,lng],{icon}).addTo(m);
     if (which==='P') mapMiniP=m; else mapMiniL=m;
-    m.invalidateSize();
-  }, 200);
+    setTimeout(() => m.invalidateSize(), 100);
+  };
+  if (container.offsetWidth > 0) { doInit(); }
+  else {
+    const ro = new ResizeObserver(() => { if(container.offsetWidth>0){ ro.disconnect(); doInit(); } });
+    ro.observe(container);
+  }
 }
 
 // ===== PASSENGERS =====
