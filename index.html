@@ -309,7 +309,7 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;height:100dvh;overf
         <div class="nb-num" id="nb-num">0</div>
         <div class="nb-txt" id="nb-txt">pasajeros</div>
       </div>
-      <button class="btn-voz" id="btn-voz" onclick="toggleVoz()" title="Voz">🔇</button>
+      <button class="btn-voz on" id="btn-voz" onclick="toggleVoz()" title="Voz">🔊</button>
       <button class="btn-rc"  onclick="reCenter()" title="Centrar mapa">🎯</button>
     </div>
     <!-- Fila inferior: anterior + ver lista + saltar -->
@@ -362,10 +362,11 @@ let STOPS=[], ROUTE='', cur=0, addrs={}, routeCoords=null, navSteps=[];
 let boarded={};
 let mapOv=null, mapNav=null, vehicleMk=null, vehiclePos=null;
 let watchId=null, following=true, atStop=false;
-let vozOn=false;
+let vozOn=true;
+let paxShownForStop=false;
 let spokenAt={};  // { stepIdx: { '400':bool,'100':bool,'now':bool } }
 let curStepIdx=0;
-const ARRIVE_M=100, DEPART_M=150;
+const ARRIVE_M=200, DEPART_M=280;
 
 // ════════════════════════════════════════════════════════
 // SERVICE WORKER
@@ -640,7 +641,14 @@ async function fetchAddrs(){
   for(let i=0;i<STOPS.length;i++){
     const s=STOPS[i];if(!s.lat||!s.lng)continue;
     const a=await fetchAddr(s.lat,s.lng);
-    if(a){addrs[i]=a;const el=document.getElementById('sa-'+i);if(el)el.textContent='📍 '+a;if(i===cur)refreshSIB()}
+    if(a){
+      addrs[i]=a;
+      const el=document.getElementById('sa-'+i);if(el)el.textContent='📍 '+a;
+      if(i===cur){
+        document.getElementById('sib-addr').textContent='📍 '+a;
+        document.getElementById('pp-stop-addr').textContent='📍 '+a;
+      }
+    }
     await new Promise(r=>setTimeout(r,420));
   }
 }
@@ -687,8 +695,13 @@ function startNav(){
   buildProg();refreshSIB();refreshBotBar();
   buildNavMap();
   startGPS();
-  // Announce first instruction
-  if(navSteps.length>0)setTimeout(()=>say(navSteps[0].inst),1500);
+  // Show + announce first instruction immediately
+  setTimeout(()=>{
+    const s=STOPS[cur];
+    const addr=addrs[cur]?addrs[cur]:(s.barrio||'');
+    say(`Iniciando recorrido. Dirigiéndose a ${s.name}${addr?'. '+addr:''}.`);
+    showNextTurnInstruction();
+  },1000);
 }
 
 function buildNavMap(){
@@ -791,6 +804,18 @@ function handleTurns(){
   if(minD<=40&&!spokenAt[minI]['now']){spokenAt[minI]['now']=true;say(nextStep.inst);if(minI<navSteps.length-1)curStepIdx=minI+1}
 }
 
+function showNextTurnInstruction(){
+  if(!navSteps.length)return;
+  const st=navSteps[Math.min(curStepIdx,navSteps.length-1)];
+  if(!st)return;
+  const tb=document.getElementById('turn-bar');
+  document.getElementById('turn-arrow').textContent=turnArrow(st.type,st.modifier);
+  document.getElementById('turn-inst').textContent=st.inst;
+  document.getElementById('turn-street').textContent=st.name||'';
+  document.getElementById('turn-dist').textContent=st.distance>=1000?(st.distance/1000).toFixed(1)+' km':Math.round(st.distance)+' m';
+  tb.classList.add('show');
+}
+
 function hav(lat1,lon1,lat2,lon2){
   const R=6371000,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
@@ -806,12 +831,14 @@ function updateDist(d){
 function handleArrival(dist){
   if(!atStop&&dist<=ARRIVE_M){
     atStop=true;
+    paxShownForStop=false;
     document.getElementById('sib-circle').classList.add('arrived');
-    document.getElementById('sib-lbl').textContent='✅ LLEGASTE';
+    document.getElementById('sib-lbl').textContent='✅ LLEGASTE — ABRÍ LA LISTA';
     say(`Llegaste a la ${STOPS[cur].name}. ${STOPS[cur].passengers.length} pasajero${STOPS[cur].passengers.length!==1?'s':''} a subir.`);
     openPax();
   }
-  if(atStop&&dist>DEPART_M&&!document.getElementById('pax-panel').classList.contains('show')){
+  // Only auto-advance if pax panel was already shown AND user closed it AND vehicle departed
+  if(atStop && paxShownForStop && dist>DEPART_M && !document.getElementById('pax-panel').classList.contains('show')){
     atStop=false;
     advanceStop();
   }
@@ -826,7 +853,13 @@ function refreshSIB(){
   const ci=document.getElementById('sib-circle');ci.textContent=s.id;ci.className='sib-circle';
   document.getElementById('sib-lbl').textContent='PRÓXIMA PARADA';
   document.getElementById('sib-name').textContent=s.name;
-  document.getElementById('sib-addr').textContent=addrs[cur]?'📍 '+addrs[cur]:'📍 '+(s.barrio||'Comodoro Rivadavia');
+  // Show best available address: nominatim > barrio > coords
+  let addrTxt='';
+  if(addrs[cur])addrTxt='📍 '+addrs[cur];
+  else if(s.barrio)addrTxt='📍 '+s.barrio;
+  else if(s.lat&&s.lng)addrTxt=`📍 ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}`;
+  else addrTxt='📍 Cargando...';
+  document.getElementById('sib-addr').textContent=addrTxt;
   document.getElementById('sib-dv').textContent='—';
   document.getElementById('sib-dl').textContent='sin GPS';
 }
@@ -843,6 +876,7 @@ function refreshBotBar(){
 // PAX PANEL
 // ════════════════════════════════════════════════════════
 function openPax(){
+  paxShownForStop=true;
   document.getElementById('pax-panel').classList.add('show');
   renderPax();
 }
@@ -890,11 +924,21 @@ function updCnt(stop,si){
 // NAVIGATION CONTROLS
 // ════════════════════════════════════════════════════════
 function advanceStop(){
-  if(cur<STOPS.length-1){cur++;atStop=false;spokenAt={};curStepIdx=0;buildProg();refreshSIB();refreshBotBar();buildNavMap();if(navSteps.length)setTimeout(()=>say(`Dirigiéndose a ${STOPS[cur].name}`),500)}
-  else{showFinished()}
+  if(cur<STOPS.length-1){
+    cur++;atStop=false;paxShownForStop=false;spokenAt={};curStepIdx=0;
+    buildProg();refreshSIB();refreshBotBar();buildNavMap();
+    if(navSteps.length){
+      setTimeout(()=>{
+        const s=STOPS[cur];
+        const addr=addrs[cur]?addrs[cur]:(s.barrio||'');
+        say(`Dirigiéndose a ${s.name}${addr?'. '+addr:''}.`);
+        showNextTurnInstruction();
+      },600);
+    }
+  } else {showFinished()}
 }
 function nextStop(){closePax();advanceStop()}
-function prevStop(){closePax();if(cur>0){cur--;atStop=false;spokenAt={};curStepIdx=0;buildProg();refreshSIB();refreshBotBar();buildNavMap()}}
+function prevStop(){closePax();if(cur>0){cur--;atStop=false;paxShownForStop=false;spokenAt={};curStepIdx=0;buildProg();refreshSIB();refreshBotBar();buildNavMap()}}
 function skipFwd(){nextStop()}
 function goOv(){document.getElementById('fin-panel').classList.remove('show');showScreen('sc-ov')}
 
