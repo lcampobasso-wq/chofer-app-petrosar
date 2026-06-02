@@ -361,7 +361,7 @@ let boarded={};
 let mapOv=null, mapNav=null, vehicleMk=null, vehiclePos=null;
 let watchId=null, following=true, atStop=false, paxShown=false;
 let vozOn=true, spokenAt={}, curStepIdx=0;
-const ARRIVE_M=200, DEPART_M=280;
+const ARRIVE_M=50, DEPART_M=200;
 
 // ════════════════════════════════════════════════════════
 // SERVICE WORKER
@@ -394,7 +394,7 @@ async function cacheTiles(coords){
   const lats=coords.map(c=>c[0]),lngs=coords.map(c=>c[1]);
   const [mnLat,mxLat,mnLng,mxLng]=[Math.min(...lats)-.02,Math.max(...lats)+.02,Math.min(...lngs)-.02,Math.max(...lngs)+.02];
   const urls=[];
-  for(const z of [12,13,14,15,16]){
+  for(const z of [12,13,14,15,16,17,18]){
     const[x0,x1,y0,y1]=[tilX(mnLng,z),tilX(mxLng,z),tilY(mxLat,z),tilY(mnLat,z)];
     for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)urls.push(`https://a.tile.openstreetmap.org/${z}/${x}/${y}.png`);
   }
@@ -646,6 +646,11 @@ function buildStopList(){
 // NAV MAP
 // ════════════════════════════════════════════════════════
 function startNav(){
+  // Si la parada inicial no tiene pasajeros, avanzar a la primera que sí tenga
+  if(!STOPS[cur]||!STOPS[cur].passengers||STOPS[cur].passengers.length===0){
+    const f=nextStopWithPax(cur);
+    if(f!==-1)cur=f;
+  }
   showScreen('sc-nav');
   document.getElementById('fin-overlay').classList.remove('show');
   atStop=false;paxShown=false;spokenAt={};curStepIdx=0;
@@ -653,7 +658,7 @@ function startNav(){
   buildNavMap();startGPS();
   setTimeout(()=>{
     const s=STOPS[cur];
-    const addr=addrs[cur]||s.barrio||'';
+    const addr=addrOf(cur);
     say(`Iniciando recorrido. Dirigiéndose a ${s.name}${addr?'. '+addr:''}.`);
     showFirstTurn();
   },1000);
@@ -850,12 +855,28 @@ function updCnt(){
 // ════════════════════════════════════════════════════════
 // NAVEGACIÓN
 // ════════════════════════════════════════════════════════
+// Mejor dirección disponible PARA UNA PARADA CONCRETA (por índice)
+function addrOf(i){
+  if(addrs[i])return addrs[i];
+  const s=STOPS[i];
+  if(s&&s.barrio)return s.barrio;
+  return '';
+}
+// Devuelve el próximo índice con pasajeros (salta paradas vacías del KML). -1 si no hay más.
+function nextStopWithPax(from){
+  for(let i=from;i<STOPS.length;i++){
+    if(STOPS[i].passengers&&STOPS[i].passengers.length>0)return i;
+  }
+  return -1;
+}
+
 function advanceStop(){
-  if(cur<STOPS.length-1){
-    cur++;atStop=false;paxShown=false;spokenAt={};curStepIdx=0;
+  const nxt=nextStopWithPax(cur+1);
+  if(nxt!==-1){
+    cur=nxt;atStop=false;paxShown=false;spokenAt={};curStepIdx=0;
     buildProg();refreshSIB();refreshPaxCol();buildNavMap();
     setTimeout(()=>{
-      const s=STOPS[cur];const addr=addrs[cur]||s.barrio||'';
+      const s=STOPS[cur];const addr=addrOf(cur);
       say(`Dirigiéndose a ${s.name}${addr?'. '+addr:''}.`);
       showFirstTurn();
     },600);
@@ -863,7 +884,10 @@ function advanceStop(){
 }
 function nextStop(){advanceStop()}
 function prevStop(){
-  if(cur>0){cur--;atStop=false;paxShown=false;spokenAt={};curStepIdx=0;buildProg();refreshSIB();refreshPaxCol();buildNavMap()}
+  // Vuelve a la parada anterior CON pasajeros
+  let p=-1;
+  for(let i=cur-1;i>=0;i--){if(STOPS[i].passengers&&STOPS[i].passengers.length>0){p=i;break}}
+  if(p!==-1){cur=p;atStop=false;paxShown=false;spokenAt={};curStepIdx=0;buildProg();refreshSIB();refreshPaxCol();buildNavMap()}
 }
 function goOv(){document.getElementById('fin-overlay').classList.remove('show');showScreen('sc-ov')}
 
@@ -902,13 +926,13 @@ function buildRows(){
 }
 
 async function saveToSupabase(rows){
-  const r=await fetch(`${SB_URL}/rest/v1/${SB_TABLE}`,{
+  const r=await fetch(`${SB_URL}/rest/v1/${SB_TABLE}?on_conflict=dni,fecha,recorrido`,{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
       'apikey':SB_KEY,
       'Authorization':'Bearer '+SB_KEY,
-      'Prefer':'return=minimal'
+      'Prefer':'return=minimal,resolution=merge-duplicates'
     },
     body:JSON.stringify(rows)
   });
