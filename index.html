@@ -42,9 +42,7 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .screen{display:none;flex:1;overflow:hidden;flex-direction:column}
 .screen.active{display:flex}
 
-/* ══════════════════════════════════════════════════════
-   UPLOAD
-══════════════════════════════════════════════════════ */
+/* UPLOAD */
 #sc-upload{align-items:center;justify-content:center;padding:24px 16px}
 .up-card{background:var(--card);border-radius:24px;box-shadow:0 8px 40px rgba(0,0,0,.12);
   padding:44px 36px;text-align:center;max-width:540px;width:100%}
@@ -63,9 +61,7 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   cursor:pointer;box-shadow:0 3px 10px rgba(232,160,32,.4)}
 .up-err{color:var(--red);font-size:15px;margin-top:12px;font-weight:600;display:none}
 
-/* ══════════════════════════════════════════════════════
-   OVERVIEW
-══════════════════════════════════════════════════════ */
+/* OVERVIEW */
 #map-ov{flex:1;min-height:0}
 .ov-panel{background:var(--card);border-top:3px solid var(--amber);max-height:30vh;overflow-y:auto;flex-shrink:0}
 .ov-hdr{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
@@ -98,12 +94,8 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .tile-bar{height:100%;background:var(--amber);border-radius:20px;transition:width .3s;width:0%}
 .tile-pct{color:var(--amber);font-size:20px;font-weight:800}
 
-/* ══════════════════════════════════════════════════════
-   NAVIGATION — TABLET LANDSCAPE, DOS COLUMNAS SIEMPRE
-══════════════════════════════════════════════════════ */
+/* NAVIGATION */
 #sc-nav{flex-direction:column}
-
-/* Barra de progreso — ancho completo */
 .prog-wrap{background:var(--navy);padding:6px 16px;flex-shrink:0;z-index:10}
 .prog-steps{display:flex;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:none}
 .prog-steps::-webkit-scrollbar{display:none}
@@ -111,15 +103,9 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .prog-step.done{background:var(--green)}
 .prog-step.cur{background:var(--amber);width:44px}
 .prog-lbl{text-align:center;color:rgba(255,255,255,.85);font-size:12px;font-weight:600;margin-top:4px}
-
-/* Contenedor de dos columnas */
 .nav-cols{display:flex;flex:1;overflow:hidden;min-height:0}
-
-/* ── COLUMNA IZQUIERDA: MAPA GPS ── */
 .col-map{flex:1;position:relative;min-width:0;display:flex;flex-direction:column}
 #leaflet-nav{position:absolute;inset:0}
-
-/* Barra de info de parada — encima del mapa */
 .sib{position:absolute;top:0;left:0;right:0;z-index:20;
   background:linear-gradient(180deg,rgba(30,45,62,.97),rgba(30,45,62,.90));
   color:#fff;padding:11px 14px 13px;display:flex;align-items:center;gap:12px}
@@ -135,8 +121,6 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   text-align:center;border:2px solid rgba(255,255,255,.2);min-width:84px;flex-shrink:0}
 .sib-dist-val{font-size:30px;font-weight:900;color:var(--amber);line-height:1}
 .sib-dist-lbl{font-size:11px;opacity:.75;text-transform:uppercase;margin-top:2px}
-
-/* Instrucción de giro — bajo la barra info */
 .turn-bar{position:absolute;left:0;right:0;z-index:19;
   background:rgba(10,18,30,.95);color:#fff;padding:8px 14px;
   display:none;align-items:center;gap:10px;top:calc(var(--sib-h,114px))}
@@ -145,8 +129,6 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .t-inst{font-size:17px;font-weight:700;line-height:1.2;flex:1}
 .t-street{font-size:13px;opacity:.7;margin-top:2px}
 .t-dist{font-size:20px;font-weight:900;color:var(--amber);flex-shrink:0}
-
-/* Botones flotantes sobre el mapa */
 .map-btns{position:absolute;right:12px;bottom:12px;z-index:21;display:flex;flex-direction:column;gap:8px}
 .mbtn{width:56px;height:56px;border-radius:14px;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:24px;
@@ -155,12 +137,8 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .mbtn-voz{background:var(--card);border:3px solid var(--border)}
 .mbtn-voz.on{border-color:var(--green);background:#f0fdf4}
 .mbtn:active{transform:scale(.92)}
-
-/* ── COLUMNA DERECHA: PASAJEROS SIEMPRE VISIBLES ── */
 .col-pax{width:38%;flex-shrink:0;background:var(--bg);display:flex;flex-direction:column;
   border-left:3px solid var(--amber);overflow:hidden}
-
-/* Header parada en columna derecha */
 .pax-col-hdr{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;
   padding:12px 14px;flex-shrink:0}
 .pch-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
@@ -170,13 +148,9 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .pch-name{font-size:26px;font-weight:900;line-height:1.1}
 .pch-cnt{background:rgba(255,255,255,.2);border-radius:16px;padding:3px 12px;font-size:15px;font-weight:700;flex-shrink:0}
 .pch-addr{font-size:16px;font-weight:600;opacity:.9;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* Status banner */
 .pch-status{padding:7px 14px;font-size:14px;font-weight:700;text-align:center;flex-shrink:0}
 .pch-status.driving{background:#fef9c3;color:#854d0e}
 .pch-status.arrived{background:#dcfce7;color:#166534}
-
-/* Lista de pasajeros */
 .pax-scroll{flex:1;overflow-y:auto;padding:6px 10px}
 .pax-item{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:12px;
   cursor:pointer;border-bottom:1px solid #eee;transition:background .15s;
@@ -197,9 +171,9 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .pax-dni{font-size:15px;color:var(--muted);margin-top:3px}
 .pax-bar{font-size:13px;color:var(--blue);background:#eff6ff;border-radius:5px;
   padding:2px 8px;margin-top:3px;display:inline-block}
+.pax-emp{font-size:13px;color:#854d0e;background:#fef3c7;border-radius:5px;
+  padding:2px 8px;margin-top:3px;margin-left:5px;display:inline-block;font-weight:700}
 .pax-time{font-size:14px;color:var(--green);font-weight:700;flex-shrink:0;padding-left:6px}
-
-/* Botones nav en columna derecha */
 .pax-col-nav{display:flex;gap:8px;padding:8px 10px 10px;background:var(--bg);flex-shrink:0}
 .btn-pnav{flex:1;padding:16px;border:none;border-radius:12px;font-size:18px;font-weight:700;
   font-family:var(--f);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .1s}
@@ -208,7 +182,7 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .btn-next{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;box-shadow:0 3px 12px rgba(30,45,62,.3)}
 .btn-next.fin{background:linear-gradient(135deg,var(--red),#dc2626)}
 
-/* ── PANTALLA DE FINALIZACIÓN ── */
+/* FINALIZACIÓN */
 .fin-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);
   display:none;flex-direction:column;align-items:center;justify-content:center;
   padding:30px 20px;text-align:center;gap:16px}
@@ -222,12 +196,17 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .fin-stat span{color:var(--green)}
 .fin-warn{background:#fef9c3;border-radius:12px;padding:14px;font-size:16px;
   font-weight:600;color:#854d0e;width:100%;max-width:500px}
+.fin-sync{border-radius:12px;padding:13px;font-size:15px;font-weight:700;
+  width:100%;max-width:500px;display:flex;align-items:center;justify-content:center;gap:8px}
+.fin-sync.ok{background:#dcfce7;color:#166534}
+.fin-sync.pending{background:#fef9c3;color:#854d0e}
+.fin-sync.error{background:#fee2e2;color:#991b1b}
 .fin-btns{display:flex;gap:12px;width:100%;max-width:500px}
 .btn-fin{flex:1;padding:18px;border:none;border-radius:13px;font-size:19px;font-weight:700;font-family:var(--f);cursor:pointer}
 .btn-fm{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff}
 .btn-fx{background:linear-gradient(135deg,var(--amber),var(--amber2));color:#fff}
 
-/* ── PORTRAIT WARNING ── */
+/* PORTRAIT WARNING */
 .portrait-warn{display:none;position:fixed;inset:0;z-index:9998;
   background:var(--navy);color:#fff;flex-direction:column;align-items:center;
   justify-content:center;gap:16px;text-align:center;padding:30px}
@@ -242,14 +221,12 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 </head>
 <body>
 
-<!-- Portrait warning -->
 <div class="portrait-warn">
   <div style="font-size:64px">🔄</div>
   <div style="font-size:24px;font-weight:800">Girá el tablet</div>
   <div style="font-size:16px;opacity:.75">La app funciona en modo horizontal</div>
 </div>
 
-<!-- Tile cache overlay -->
 <div class="tile-ov" id="tile-ov">
   <div style="font-size:48px">📥</div>
   <h2>Descargando mapa sin conexión</h2>
@@ -259,9 +236,8 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   <p style="font-size:13px;opacity:.6" id="tile-detail">Preparando...</p>
 </div>
 
-<!-- HEADER -->
 <header class="hdr">
-  <img src="data:image/png;base64,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" alt="PETROSAR">
+  <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjE4IiBmaWxsPSIjMWUyZDNlIi8+PHRleHQgeD0iNTAiIHk9IjYyIiBmb250LWZhbWlseT0iU2Vnb2UgVUksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9IjkwMCIgZmlsbD0iI2U4YTAyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UFM8L3RleHQ+PC9zdmc+" alt="PETROSAR">
   <div class="hdr-info">
     <div class="hdr-title" id="hdr-title">PETROSAR — Chofer App</div>
     <div class="hdr-sub"   id="hdr-sub">Cargá tu recorrido KML</div>
@@ -273,7 +249,6 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   <button class="btn-back" id="btn-back" style="display:none" onclick="resetApp()">⬅ Nuevo KML</button>
 </header>
 
-<!-- UPLOAD -->
 <div id="sc-upload" class="screen active">
   <div class="up-card">
     <div class="up-icon">🗺️</div>
@@ -290,7 +265,6 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   </div>
 </div>
 
-<!-- OVERVIEW -->
 <div id="sc-ov" class="screen">
   <div id="map-ov"></div>
   <div class="ov-panel">
@@ -303,22 +277,14 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   </div>
 </div>
 
-<!-- NAVIGATION -->
 <div id="sc-nav" class="screen">
-  <!-- Barra progreso — ancho completo -->
   <div class="prog-wrap">
     <div class="prog-steps" id="prog-steps"></div>
     <div class="prog-lbl"   id="prog-lbl"></div>
   </div>
-
-  <!-- Dos columnas -->
   <div class="nav-cols">
-
-    <!-- COLUMNA IZQUIERDA: MAPA -->
     <div class="col-map">
       <div id="leaflet-nav"></div>
-
-      <!-- Info de parada sobre el mapa -->
       <div class="sib" id="sib">
         <div class="sib-circle" id="sib-c">1</div>
         <div class="sib-text">
@@ -331,8 +297,6 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
           <div class="sib-dist-lbl" id="sib-dl">sin GPS</div>
         </div>
       </div>
-
-      <!-- Instrucción de giro -->
       <div class="turn-bar" id="turn-bar">
         <div class="t-arrow" id="t-arrow">↑</div>
         <div style="flex:1">
@@ -341,17 +305,12 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
         </div>
         <div class="t-dist" id="t-dist">—</div>
       </div>
-
-      <!-- Botones flotantes -->
       <div class="map-btns">
         <button class="mbtn mbtn-voz on" id="btn-voz" onclick="toggleVoz()" title="Voz">🔊</button>
         <button class="mbtn mbtn-rc"      onclick="reCenter()" title="Centrar">🎯</button>
       </div>
     </div>
-
-    <!-- COLUMNA DERECHA: PASAJEROS SIEMPRE VISIBLES -->
     <div class="col-pax" id="col-pax">
-      <!-- Header de la parada -->
       <div class="pax-col-hdr">
         <div class="pch-top">
           <div class="pch-circle" id="pch-c">1</div>
@@ -362,14 +321,8 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
         </div>
         <div class="pch-addr" id="pch-addr">📍 ...</div>
       </div>
-
-      <!-- Banner de estado -->
       <div class="pch-status driving" id="pch-status">🚌 En camino · Tocá cada pasajero al subir</div>
-
-      <!-- Lista de pasajeros -->
       <div class="pax-scroll" id="pax-list"></div>
-
-      <!-- Botones nav -->
       <div class="pax-col-nav">
         <button class="btn-pnav btn-prev" onclick="prevStop()">◀ Anterior</button>
         <button class="btn-pnav btn-next" id="btn-next" onclick="nextStop()">Siguiente ▶</button>
@@ -378,13 +331,13 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   </div>
 </div>
 
-<!-- FINALIZACIÓN (fixed sobre todo) -->
 <div class="fin-overlay" id="fin-overlay">
   <div class="fin-icon">🎯</div>
   <div class="fin-title">Recorrido completo</div>
   <div class="fin-sub">Todas las paradas cubiertas</div>
   <div class="fin-stat"><div>Pasajeros confirmados</div><span id="fin-stat">0 / 0</span></div>
   <div class="fin-warn" id="fin-warn" style="display:none"></div>
+  <div class="fin-sync pending" id="fin-sync">⏳ Guardando embarque...</div>
   <div class="fin-btns">
     <button class="btn-fin btn-fm" onclick="goOv()">🗺 Ver mapa</button>
     <button class="btn-fin btn-fx" onclick="dlXlsx()">📥 Descargar Excel</button>
@@ -392,6 +345,14 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 </div>
 
 <script>
+// ════════════════════════════════════════════════════════
+// CONFIG SUPABASE
+// ════════════════════════════════════════════════════════
+const SB_URL='https://acvkgxwkoprftxfutnbq.supabase.co';
+const SB_KEY='sb_publishable_oxT-JSRhioj00iI_iy_Sgg_xnyBG8RO';
+const SB_TABLE='transporte_embarques';
+const PENDING_KEY='petrosar_embarques_pendientes';
+
 // ════════════════════════════════════════════════════════
 // ESTADO
 // ════════════════════════════════════════════════════════
@@ -491,8 +452,9 @@ function parseKML(txt){
       const dni=(desc.match(/Legajo\s*:\s*([^|\n]+)/i)||[,''])[1].trim();
       const bar=(desc.match(/Barrio\s*:\s*([^|\n]+)/i)||[,''])[1].trim().replace(/^-$/,'');
       const stp=(desc.match(/Parada\s*:\s*([^|\n]+)/i)||[,''])[1].trim();
+      const emp=parseEmpresa(desc);
       if(!paxBy[stp])paxBy[stp]=[];
-      paxBy[stp].push({name:tcase(name),dni:fmtDni(dni),barrio:bar&&bar!=='-'?bar:''});
+      paxBy[stp].push({name:tcase(cleanName(name)),dni:fmtDni(dni),barrio:bar&&bar!=='-'?bar:'',empresa:emp});
       continue;
     }
   }
@@ -502,14 +464,27 @@ function parseKML(txt){
     const sm=name.match(/^Parada\s*(\d+)\s*:/i);if(!sm)continue;
     const lbl='Parada '+parseInt(sm[1]);
     if(!stopMap[lbl]||stopMap[lbl].passengers.length>0)continue;
-    const after=desc.indexOf(':')+1;if(after<=0)continue;
-    const str=desc.slice(after);const re=/([A-Za-záéíóúÁÉÍÓÚñÑüÜ ,]+?)\s*\((\d+)\)/g;let m;
-    while((m=re.exec(str))!==null)stopMap[lbl].passengers.push({name:tcase(m[1].replace(/,/g,' ').replace(/\s+/g,' ').trim()),dni:fmtDni(m[2]),barrio:''});
+    // Fallback formato viejo: "2 pasajeros: NOMBRE (DNI), NOMBRE (DNI)"
+    // o nuevo resumen: "2 pasajeros (...) — NOMBRE (DNI) [EMP], ..."
+    const dash=desc.indexOf('—');
+    const after=dash>=0?dash+1:desc.indexOf(':')+1;if(after<=0)continue;
+    const str=desc.slice(after);const re=/([A-Za-záéíóúÁÉÍÓÚñÑüÜ ,.]+?)\s*\((\d+)\)\s*(?:\[([^\]]+)\])?/g;let m;
+    while((m=re.exec(str))!==null)stopMap[lbl].passengers.push({name:tcase(m[1].replace(/,/g,' ').replace(/\s+/g,' ').trim()),dni:fmtDni(m[2]),barrio:'',empresa:(m[3]||'').trim()});
   }
   return{name:rName,stops:Object.values(stopMap).sort((a,b)=>a.id-b.id)};
 }
+// Captura el nombre largo de la empresa: "Empresa: Baker Hughes (B.Hughes) | ..." -> "Baker Hughes"
+function parseEmpresa(desc){
+  const m=desc.match(/Empresa\s*:\s*([^|\n]+)/i);
+  if(!m)return '';
+  let e=m[1].trim();
+  e=e.replace(/\s*\([^)]*\)\s*$/,'').trim(); // saca el "(CÓDIGO)" final
+  return e;
+}
+// Limpia el sufijo "[EMP]" del nombre del Placemark
+const cleanName=s=>s.replace(/\s*\[[^\]]*\]\s*$/,'').trim();
 const tcase=s=>s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
-const fmtDni=r=>{const d=r.replace(/\D/g,'');return d.length<8?d:d.replace(/(\d{2})(\d{3})(\d{3})/,'$1.$2.$3')};
+const fmtDni=r=>{const d=r.replace(/\D/g,'');return d.length<8?d:d.length>8?d:d.replace(/(\d{2})(\d{3})(\d{3})/,'$1.$2.$3')};
 function showErr(m){const e=document.getElementById('up-err');e.style.display='block';e.textContent='⚠️ '+m}
 
 // ════════════════════════════════════════════════════════
@@ -524,6 +499,7 @@ async function launchApp(){
   document.getElementById('kpi-x').textContent=STOPS.reduce((s,p)=>s+p.passengers.length,0);
   buildStopList();
   showScreen('sc-ov');
+  flushPending(); // intenta subir embarques pendientes al cargar
   const r=await fetchOSRM();
   routeCoords=r.coords;navSteps=r.steps;
   buildOvMap();fetchAddrs();
@@ -822,7 +798,6 @@ function refreshSIB(){
 function refreshPaxCol(){
   if(cur>=STOPS.length)return;
   const s=STOPS[cur];
-  // Header
   const ci=document.getElementById('pch-c');ci.textContent=s.id;ci.className='pch-circle';
   document.getElementById('pch-name').textContent=s.name;
   let addr='';
@@ -830,15 +805,12 @@ function refreshPaxCol(){
   else if(s.barrio)addr='📍 '+s.barrio;
   else addr='📍 Cargando...';
   document.getElementById('pch-addr').textContent=addr;
-  // Status
   const st=document.getElementById('pch-status');
   st.className='pch-status driving';
   st.textContent='🚌 En camino · Tocá cada pasajero al subir';
-  // Nav button
   const bn=document.getElementById('btn-next');
   bn.className=cur===STOPS.length-1?'btn-pnav btn-next fin':'btn-pnav btn-next';
   bn.innerHTML=cur===STOPS.length-1?'✅ Finalizar':'Siguiente ▶';
-  // Passengers
   renderPax();
 }
 
@@ -849,7 +821,9 @@ function renderPax(){
   s.passengers.forEach((p,pi)=>{
     const key=cur+'-'+pi,rec=boarded[key],ok=!!rec;
     const d=document.createElement('div');d.className='pax-item'+(ok?' ok':'');d.id='px-'+key;
-    d.innerHTML=`<div class="pax-chk">${ok?'✓':''}</div><div class="pax-av">${ok?'✓':p.name[0].toUpperCase()}</div><div class="pax-inf"><div class="pax-nm">${p.name}</div><div class="pax-dni">DNI ${p.dni}</div>${p.barrio?`<span class="pax-bar">${p.barrio}</span>`:''}</div>${ok?`<div class="pax-time">⏱ ${rec.time}</div>`:''}`;
+    const empTag=p.empresa?`<span class="pax-emp">🏢 ${p.empresa}</span>`:'';
+    const barTag=p.barrio?`<span class="pax-bar">${p.barrio}</span>`:'';
+    d.innerHTML=`<div class="pax-chk">${ok?'✓':''}</div><div class="pax-av">${ok?'✓':p.name[0].toUpperCase()}</div><div class="pax-inf"><div class="pax-nm">${p.name}</div><div class="pax-dni">DNI ${p.dni}</div>${barTag}${empTag}</div>${ok?`<div class="pax-time">⏱ ${rec.time}</div>`:''}`;
     d.onclick=()=>{
       if(boarded[key])delete boarded[key];
       else{const now=new Date();boarded[key]={time:now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}}
@@ -903,9 +877,67 @@ function buildProg(){
 }
 
 // ════════════════════════════════════════════════════════
-// FINALIZACIÓN
+// FINALIZACIÓN + GUARDADO AUTOMÁTICO SUPABASE
 // ════════════════════════════════════════════════════════
-function showFinished(){
+function buildRows(){
+  const fecha=new Date().toISOString().slice(0,10);
+  const rows=[];
+  STOPS.forEach((s,si)=>{
+    s.passengers.forEach((p,pi)=>{
+      const rec=boarded[String(si)+'-'+String(pi)];
+      rows.push({
+        recorrido:ROUTE,
+        parada:s.name,
+        barrio:s.barrio||p.barrio||'',
+        empresa:p.empresa||'',
+        nombre_pasajero:p.name,
+        dni:p.dni,
+        estado:rec?'CONFIRMADO':'AUSENTE',
+        fecha:fecha,
+        hora_embarque:rec?rec.time:''
+      });
+    });
+  });
+  return rows;
+}
+
+async function saveToSupabase(rows){
+  const r=await fetch(`${SB_URL}/rest/v1/${SB_TABLE}`,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'apikey':SB_KEY,
+      'Authorization':'Bearer '+SB_KEY,
+      'Prefer':'return=minimal'
+    },
+    body:JSON.stringify(rows)
+  });
+  if(!r.ok){const t=await r.text();throw new Error('HTTP '+r.status+' '+t)}
+  return true;
+}
+
+function getPending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]')}catch(_){return[]}}
+function setPending(arr){try{localStorage.setItem(PENDING_KEY,JSON.stringify(arr))}catch(_){}}
+function addPending(rows){const p=getPending();p.push({ts:Date.now(),rows});setPending(p)}
+
+// Reintenta subir lo que quedó pendiente por falta de señal
+async function flushPending(){
+  let p=getPending();
+  if(!p.length)return;
+  const keep=[];
+  for(const batch of p){
+    try{await saveToSupabase(batch.rows)}catch(e){keep.push(batch)}
+  }
+  setPending(keep);
+}
+
+function setSync(state,msg){
+  const el=document.getElementById('fin-sync');
+  el.className='fin-sync '+state;
+  el.textContent=msg;
+}
+
+async function showFinished(){
   if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null}
   let tot=0,ok=0;
   STOPS.forEach((s,si)=>s.passengers.forEach((_,pi)=>{tot++;if(boarded[si+'-'+pi])ok++}));
@@ -914,31 +946,48 @@ function showFinished(){
   if(ok<tot){w.style.display='block';w.textContent=`⚠️ ${tot-ok} pasajero${tot-ok!==1?'s':''} sin confirmar`}else{w.style.display='none'}
   document.getElementById('fin-overlay').classList.add('show');
   say(`Recorrido finalizado. ${ok} pasajeros confirmados.`);
+
+  // Guardado automático en Supabase
+  setSync('pending','⏳ Guardando embarque automáticamente...');
+  const rows=buildRows();
+  try{
+    await saveToSupabase(rows);
+    await flushPending(); // aprovecha la señal para subir lo viejo
+    setSync('ok','✅ Embarque guardado automáticamente');
+  }catch(e){
+    addPending(rows); // guarda local y reintenta después
+    setSync('error','⏳ Sin señal — se guardará al recuperar conexión');
+    // reintento cuando vuelva la conexión
+    window.addEventListener('online',()=>{flushPending().then(()=>{
+      if(!getPending().length)setSync('ok','✅ Embarque guardado automáticamente');
+    })},{once:true});
+  }
 }
 
 // ════════════════════════════════════════════════════════
-// EXCEL
+// EXCEL (respaldo manual)
 // ════════════════════════════════════════════════════════
 function dlXlsx(){
   const fecha=new Date().toLocaleDateString('es-AR');
-  const cr=[['Línea','Parada','Barrio','Nombre Pasajero','DNI','Estado','Fecha','Hora Embarque']];
-  const pr=[['Línea','Parada','Barrio','Nombre Pasajero','DNI','Estado','Fecha']];
+  const cr=[['Línea','Parada','Barrio','Empresa','Nombre Pasajero','DNI','Estado','Fecha','Hora Embarque']];
+  const pr=[['Línea','Parada','Barrio','Empresa','Nombre Pasajero','DNI','Estado','Fecha']];
   STOPS.forEach((s,si)=>{
     s.passengers.forEach((p,pi)=>{
       const key=String(si)+'-'+String(pi),rec=boarded[key];
-      const base=[ROUTE,s.name,s.barrio||'',p.name,p.dni];
+      const base=[ROUTE,s.name,s.barrio||p.barrio||'',p.empresa||'',p.name,p.dni];
       if(rec)cr.push([...base,'CONFIRMADO',fecha,rec.time]);
       else pr.push([...base,'AUSENTE',fecha]);
     });
   });
   const wb=XLSX.utils.book_new();
-  const ws1=XLSX.utils.aoa_to_sheet(cr);ws1['!cols']=[{wch:28},{wch:12},{wch:26},{wch:32},{wch:16},{wch:14},{wch:12},{wch:14}];
+  const ws1=XLSX.utils.aoa_to_sheet(cr);ws1['!cols']=[{wch:28},{wch:12},{wch:26},{wch:24},{wch:32},{wch:16},{wch:14},{wch:12},{wch:14}];
   XLSX.utils.book_append_sheet(wb,ws1,'Confirmados');
-  if(pr.length>1){const ws2=XLSX.utils.aoa_to_sheet(pr);ws2['!cols']=[{wch:28},{wch:12},{wch:26},{wch:32},{wch:16},{wch:14},{wch:12}];XLSX.utils.book_append_sheet(wb,ws2,'Ausentes')}
+  if(pr.length>1){const ws2=XLSX.utils.aoa_to_sheet(pr);ws2['!cols']=[{wch:28},{wch:12},{wch:26},{wch:24},{wch:32},{wch:16},{wch:14},{wch:12}];XLSX.utils.book_append_sheet(wb,ws2,'Ausentes')}
   XLSX.writeFile(wb,'Embarque_'+ROUTE.replace(/\s+/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
 window.addEventListener('resize',()=>setTimeout(()=>{if(mapOv)mapOv.invalidateSize();if(mapNav)mapNav.invalidateSize()},300));
+window.addEventListener('online',()=>flushPending());
 </script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
 </body>
