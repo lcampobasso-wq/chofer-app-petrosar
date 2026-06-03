@@ -390,23 +390,50 @@ const tilY=(lat,z)=>Math.floor((1-Math.log(Math.tan(lat*Math.PI/180)+1/Math.cos(
 const tilX=(lng,z)=>Math.floor((lng+180)/360*Math.pow(2,z));
 
 async function cacheTiles(coords){
-  if(!coords||coords.length<2)return;
-  const lats=coords.map(c=>c[0]),lngs=coords.map(c=>c[1]);
-  const [mnLat,mxLat,mnLng,mxLng]=[Math.min(...lats)-.02,Math.max(...lats)+.02,Math.min(...lngs)-.02,Math.max(...lngs)+.02];
-  const urls=[];
-  for(const z of [12,13,14,15,16,17,18]){
+  // Área SOLO de las paradas reales (ignora la base lejana / Cerro Dragón)
+  const pts=STOPS.filter(s=>s.lat&&s.lng).map(s=>[s.lat,s.lng]);
+  if(pts.length<1)return;
+  const lats=pts.map(c=>c[0]),lngs=pts.map(c=>c[1]);
+  const [mnLat,mxLat,mnLng,mxLng]=[Math.min(...lats)-.015,Math.max(...lats)+.015,Math.min(...lngs)-.015,Math.max(...lngs)+.015];
+  const set=new Set();
+  // 1) Vista general de la zona de paradas: zoom 13 a 15 (área chica, peso bajo)
+  for(const z of [13,14,15]){
     const[x0,x1,y0,y1]=[tilX(mnLng,z),tilX(mxLng,z),tilY(mxLat,z),tilY(mnLat,z)];
-    for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)urls.push(`https://a.tile.openstreetmap.org/${z}/${x}/${y}.png`);
+    for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)set.add(`${z}/${x}/${y}`);
   }
+  // 2) Detalle de calles alrededor de cada parada: zoom 16,17 recuadro ~1.2km
+  const DELTA=0.011; // ~1.2 km de radio
+  for(const s of STOPS){
+    if(!s.lat||!s.lng)continue;
+    const a=s.lat-DELTA,b=s.lat+DELTA,c=s.lng-DELTA,d=s.lng+DELTA;
+    for(const z of [16,17]){
+      const[x0,x1,y0,y1]=[tilX(c,z),tilX(d,z),tilY(b,z),tilY(a,z)];
+      for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)set.add(`${z}/${x}/${y}`);
+    }
+  }
+  const urls=[...set].map(k=>`https://a.tile.openstreetmap.org/${k}.png`);
   if(!urls.length)return;
   document.getElementById('tile-ov').classList.add('show');
   document.getElementById('tile-detail').textContent='0 / '+urls.length+' tiles';
-  const sw=await navigator.serviceWorker?.ready;
-  if(sw?.active){sw.active.postMessage({type:'CACHE_TILES',urls})}
-  else{
+  {
     const cache=await caches.open('chofer-tiles-v1');let done=0;
-    for(const url of urls){try{const r=await fetch(url,{mode:'cors'});if(r.ok)await cache.put(url,r)}catch(_){}done++;
-      if(done%20===0){const p=Math.round(done/urls.length*100);document.getElementById('tile-bar').style.width=p+'%';document.getElementById('tile-pct').textContent=p+'%';document.getElementById('tile-detail').textContent=done+' / '+urls.length+' tiles'}}
+    // Descarga por tandas de 6 con pausa, para no saturar OSM
+    const BATCH=6;
+    for(let i=0;i<urls.length;i+=BATCH){
+      const tanda=urls.slice(i,i+BATCH);
+      await Promise.all(tanda.map(async url=>{
+        for(let intento=0;intento<2;intento++){
+          try{const r=await fetch(url,{mode:'cors'});if(r.ok){await cache.put(url,r);break}}catch(_){}
+          await new Promise(r=>setTimeout(r,300));
+        }
+        done++;
+      }));
+      const p=Math.round(done/urls.length*100);
+      document.getElementById('tile-bar').style.width=p+'%';
+      document.getElementById('tile-pct').textContent=p+'%';
+      document.getElementById('tile-detail').textContent=done+' / '+urls.length+' tiles';
+      await new Promise(r=>setTimeout(r,120));
+    }
     document.getElementById('tile-ov').classList.remove('show');document.getElementById('offline-badge').classList.add('show');
   }
 }
@@ -679,7 +706,8 @@ function buildNavMap(){
       const ic=L.divIcon({html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,sans-serif;font-weight:900;font-size:${fs}px;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5)">${isDone?'✓':s.id}</div>`,className:'',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
       L.marker([s.lat,s.lng],{icon:ic}).addTo(mapNav).bindTooltip(s.name,{direction:'top'});
     });
-    if(routeCoords?.length>1)mapNav.fitBounds(L.latLngBounds(routeCoords),{padding:[60,80]});
+    const _pts=STOPS.filter(s=>s.lat&&s.lng).map(s=>[s.lat,s.lng]);
+    if(_pts.length>1)mapNav.fitBounds(L.latLngBounds(_pts),{padding:[60,80]});
     else if(STOPS[cur]?.lat)mapNav.setView([STOPS[cur].lat,STOPS[cur].lng],14);
     mapNav.on('dragstart',()=>{following=false});
     setTimeout(()=>mapNav.invalidateSize(),200);
