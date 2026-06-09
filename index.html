@@ -61,6 +61,22 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   cursor:pointer;box-shadow:0 3px 10px rgba(232,160,32,.4)}
 .up-err{color:var(--red);font-size:15px;margin-top:12px;font-weight:600;display:none}
 
+/* LISTA DE RECORRIDOS (API) */
+.rec-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px;text-align:left;max-height:46vh;overflow-y:auto}
+.rec-btn{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid var(--border);
+  border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .15s;font-family:var(--f);text-align:left;width:100%}
+.rec-btn:hover{border-color:var(--amber);background:#fffbf0}
+.rec-btn:active{transform:scale(.98)}
+.rec-ico{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--navy),var(--navy2));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.rec-info{flex:1;min-width:0}
+.rec-nm{font-size:16px;font-weight:700;color:var(--navy);line-height:1.15}
+.rec-dst{font-size:12px;color:var(--muted);margin-top:2px}
+.btn-rec-reload{background:var(--card);color:var(--navy);border:2px solid var(--border);
+  border-radius:11px;padding:11px 24px;font-size:15px;font-weight:600;font-family:var(--f);cursor:pointer;margin-bottom:8px}
+.up-manual{margin-top:16px;text-align:left;border-top:1px solid var(--border);padding-top:14px}
+.up-manual summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);padding:6px 0}
+
 /* OVERVIEW */
 #map-ov{flex:1;min-height:0}
 .ov-panel{background:var(--card);border-top:3px solid var(--amber);max-height:30vh;overflow-y:auto;flex-shrink:0}
@@ -272,16 +288,23 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 
 <div id="sc-upload" class="screen active">
   <div class="up-card">
-    <div class="up-icon">🗺️</div>
+    <div class="up-icon">🚌</div>
     <div class="up-title">App del Chofer</div>
-    <div class="up-sub">Cargá el archivo KML del recorrido. El mapa se descarga para usarlo sin señal.</div>
-    <div class="up-drop" id="up-drop">
-      <input type="file" id="kml-in" accept=".kml" onchange="onFile(event)">
-      <div class="up-drop-icon">📂</div>
-      <div class="up-drop-t">Tocá para seleccionar el archivo</div>
-      <div class="up-drop-s">o arrastrá el KML aquí</div>
-    </div>
-    <button class="btn-up" onclick="document.getElementById('kml-in').click()">📁 Seleccionar KML</button>
+    <div class="up-sub">Elegí tu recorrido de la lista. Necesitás WiFi para cargarlo (en la base).</div>
+
+    <div id="rec-loading" style="padding:20px;color:var(--muted);font-size:16px">⏳ Buscando recorridos...</div>
+    <div id="rec-list" class="rec-list"></div>
+    <button class="btn-rec-reload" id="btn-rec-reload" onclick="loadRecList()" style="display:none">🔄 Recargar lista</button>
+
+    <details class="up-manual">
+      <summary>📁 Cargar archivo KML manual (respaldo)</summary>
+      <div class="up-drop" id="up-drop" style="margin-top:14px">
+        <input type="file" id="kml-in" accept=".kml" onchange="onFile(event)">
+        <div class="up-drop-icon">📂</div>
+        <div class="up-drop-t">Tocá para seleccionar el archivo</div>
+        <div class="up-drop-s">o arrastrá el KML aquí</div>
+      </div>
+    </details>
     <div class="up-err" id="up-err"></div>
   </div>
 </div>
@@ -475,15 +498,93 @@ function onFile(e){if(e.target.files[0])processKML(e.target.files[0])}
 function processKML(file){
   if(!file.name.toLowerCase().endsWith('.kml')){showErr('Debe ser un archivo .kml');return}
   const r=new FileReader();
-  r.onload=e=>{
-    try{const res=parseKML(e.target.result);
-      if(!res||!res.stops.length){showErr('No se encontraron paradas');return}
-      STOPS=res.stops;ROUTE=res.name;boarded={};addrs={};routeCoords=null;navSteps=[];cur=0;
-      launchApp();
-    }catch(ex){showErr('Error: '+ex.message)}
-  };
+  r.onload=e=>processKMLText(e.target.result);
   r.readAsText(file,'UTF-8');
 }
+
+// Procesa el texto de un KML (lo usan tanto el archivo manual como la API)
+function processKMLText(txt,nombreFallback){
+  try{const res=parseKML(txt);
+    if(!res||!res.stops.length){showErr('No se encontraron paradas');return}
+    STOPS=res.stops;ROUTE=res.name||nombreFallback||'Recorrido';boarded={};addrs={};routeCoords=null;navSteps=[];cur=0;
+    launchApp();
+  }catch(ex){showErr('Error: '+ex.message)}
+}
+
+// ════════════════════════════════════════════════════════
+// LISTA DE RECORRIDOS DESDE LA API (otra app)
+// ════════════════════════════════════════════════════════
+const REC_API='https://ekagurvuoccrxfbgarau.supabase.co/functions/v1/kml?lista=1';
+let REC_CACHE_KEY='petrosar_recorridos_lista';
+
+async function loadRecList(){
+  const loading=document.getElementById('rec-loading');
+  const list=document.getElementById('rec-list');
+  const reload=document.getElementById('btn-rec-reload');
+  loading.style.display='block';loading.textContent='⏳ Buscando recorridos...';
+  list.innerHTML='';reload.style.display='none';
+  try{
+    const r=await fetch(REC_API);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const recs=await r.json();
+    // Guardar lista en local para verla aunque no haya señal después
+    try{localStorage.setItem(REC_CACHE_KEY,JSON.stringify(recs))}catch(_){}
+    renderRecList(recs);
+  }catch(e){
+    // Sin señal: intentar mostrar la última lista guardada
+    let cached=null;
+    try{cached=JSON.parse(localStorage.getItem(REC_CACHE_KEY)||'null')}catch(_){}
+    if(cached&&cached.length){
+      renderRecList(cached);
+      loading.style.display='block';
+      loading.innerHTML='📴 Sin señal — mostrando última lista guardada';
+    }else{
+      loading.style.display='block';
+      loading.innerHTML='⚠️ No se pudo cargar la lista. Revisá la conexión.';
+      reload.style.display='inline-block';
+    }
+  }
+}
+
+function renderRecList(recs){
+  const loading=document.getElementById('rec-loading');
+  const list=document.getElementById('rec-list');
+  const reload=document.getElementById('btn-rec-reload');
+  loading.style.display='none';
+  reload.style.display='inline-block';
+  if(!recs||!recs.length){loading.style.display='block';loading.textContent='No hay recorridos disponibles.';return}
+  // Ordenar por nombre
+  recs.sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
+  list.innerHTML='';
+  recs.forEach(rc=>{
+    const b=document.createElement('button');
+    b.className='rec-btn';
+    b.innerHTML=`<div class="rec-ico">${esc(rc.destino||'🚌')}</div>
+      <div class="rec-info"><div class="rec-nm">${esc(rc.nombre||'Recorrido')}</div>
+      <div class="rec-dst">Tocá para cargar</div></div>`;
+    b.onclick=()=>pickRecorrido(rc);
+    list.appendChild(b);
+  });
+}
+
+async function pickRecorrido(rc){
+  const loading=document.getElementById('rec-loading');
+  document.getElementById('up-err').style.display='none';
+  loading.style.display='block';
+  loading.textContent='⏳ Cargando '+(rc.nombre||'recorrido')+'...';
+  try{
+    const r=await fetch(rc.kml_url);
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();
+    loading.style.display='none';
+    processKMLText(txt,rc.nombre);
+  }catch(e){
+    loading.style.display='block';
+    loading.innerHTML='⚠️ No se pudo bajar el recorrido. ¿Tenés señal? '+e.message;
+  }
+}
+
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function parseKML(txt){
   const doc=new DOMParser().parseFromString(txt,'text/xml');
@@ -572,6 +673,7 @@ function resetApp(){
   document.getElementById('offline-badge').classList.remove('show');
   document.getElementById('hdr-title').textContent='PETROSAR — Chofer App';
   showScreen('sc-upload');
+  loadRecList();
 }
 
 function showScreen(id){
@@ -1121,6 +1223,8 @@ function dlXlsx(){
 }
 
 window.addEventListener('resize',()=>setTimeout(()=>{if(mapOv)mapOv.invalidateSize();if(mapNav)mapNav.invalidateSize()},300));
+// Cargar la lista de recorridos al abrir la app
+loadRecList();
 window.addEventListener('online',()=>flushPending());
 </script>
 <script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
