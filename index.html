@@ -62,16 +62,35 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 .up-err{color:var(--red);font-size:15px;margin-top:12px;font-weight:600;display:none}
 
 /* LISTA DE RECORRIDOS (API) */
-.rec-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px;text-align:left;max-height:46vh;overflow-y:auto}
+.rec-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;text-align:left;max-height:52vh;overflow-y:auto}
 .rec-btn{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid var(--border);
   border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .15s;font-family:var(--f);text-align:left;width:100%}
-.rec-btn:hover{border-color:var(--amber);background:#fffbf0}
 .rec-btn:active{transform:scale(.98)}
-.rec-ico{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--navy),var(--navy2));
-  color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
 .rec-info{flex:1;min-width:0}
-.rec-nm{font-size:16px;font-weight:700;color:var(--navy);line-height:1.15}
-.rec-dst{font-size:12px;color:var(--muted);margin-top:2px}
+.rec-nm{font-size:17px;font-weight:700;line-height:1.15}
+.rec-dst{font-size:12px;margin-top:2px}
+
+/* NIVEL 1: ZONAS */
+.zona-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.zona-btn{border:2px solid;border-radius:16px;padding:22px 16px;cursor:pointer;font-family:var(--f);
+  text-align:center;transition:transform .1s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.zona-btn:active{transform:scale(.97)}
+.zona-ico{font-size:34px;margin-bottom:4px}
+.zona-nm{font-size:18px;font-weight:800;line-height:1.1}
+.zona-cant{font-size:13px;font-weight:600}
+
+/* NIVEL 2: RECORRIDOS DE ZONA */
+.btn-volver-zona{background:#fff;border:2px solid var(--border);border-radius:11px;padding:10px 18px;
+  font-size:15px;font-weight:600;font-family:var(--f);color:var(--navy);cursor:pointer;margin-bottom:6px}
+.zona-titulo{font-size:20px;font-weight:800;margin:6px 0 10px;text-align:left}
+.rec-card{margin-bottom:6px}
+.alim-wrap{margin-top:7px;padding-left:14px;display:flex;flex-direction:column;gap:6px}
+.alim-btn{border:2px solid;border-radius:11px;padding:11px 14px;cursor:pointer;font-family:var(--f);
+  text-align:left;width:100%;transition:transform .1s}
+.alim-btn:active{transform:scale(.98)}
+.alim-nm{font-size:15px;font-weight:700;line-height:1.1}
+.alim-lbl{font-size:11px;font-weight:600;margin-top:2px}
+
 .btn-rec-reload{background:var(--card);color:var(--navy);border:2px solid var(--border);
   border-radius:11px;padding:11px 24px;font-size:15px;font-weight:600;font-family:var(--f);cursor:pointer;margin-bottom:8px}
 .up-manual{margin-top:16px;text-align:left;border-top:1px solid var(--border);padding-top:14px}
@@ -290,7 +309,7 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   <div class="up-card">
     <div class="up-icon">🚌</div>
     <div class="up-title">App del Chofer</div>
-    <div class="up-sub">Elegí tu recorrido de la lista. Necesitás WiFi para cargarlo (en la base).</div>
+    <div class="up-sub" id="up-sub-dyn">Elegí tu zona y después tu recorrido. Necesitás WiFi (en la base).</div>
 
     <div id="rec-loading" style="padding:20px;color:var(--muted);font-size:16px">⏳ Buscando recorridos...</div>
     <div id="rec-list" class="rec-list"></div>
@@ -546,24 +565,136 @@ async function loadRecList(){
   }
 }
 
+// ════════════════════════════════════════════════════════
+// CLASIFICACIÓN EN ZONAS + ALIMENTADORES
+// ════════════════════════════════════════════════════════
+let ALL_RECS=[]; // todos los recorridos visibles
+
+// Zonas con su color (orden = orden de aparición)
+const ZONAS=[
+  {key:'cd_comodoro', titulo:'CD Comodoro',     bg:'#E6F1FB', bd:'#378ADD', tx:'#0C447C', tx2:'#185FA5'},
+  {key:'cd_sarmiento',titulo:'CD Sarmiento',    bg:'#EEEDFE', bd:'#7F77DD', tx:'#3C3489', tx2:'#534AB7'},
+  {key:'resero',      titulo:'Resero Comodoro', bg:'#FAECE7', bd:'#D85A30', tx:'#712B13', tx2:'#993C1D'},
+  {key:'ag_sarmiento',titulo:'AG Sarmiento',    bg:'#FAEEDA', bd:'#EF9F27', tx:'#633806', tx2:'#854F0B'},
+];
+const ZONA_ALIM={bg:'#E1F5EE', bd:'#1D9E75', tx:'#085041', tx2:'#0F6E56'}; // verde alimentadores
+
+// ¿Este recorrido se oculta? (Tres Picos y VH no se hacen)
+function recOculto(rc){
+  const d=(rc.destino||'').toUpperCase();
+  const n=(rc.nombre||'').toUpperCase();
+  if(d==='TP'||n.includes('TRES PICOS'))return true;
+  if(d==='VH')return true;
+  return false;
+}
+
+// ¿Es alimentador? (termina en número + una letra)
+function esAlimentador(nombre){return /\d+\s*[A-Za-z]\s*$/.test(String(nombre||''))}
+// Número del recorrido (para emparentar alimentador con su padre)
+function numeroRec(nombre){const m=String(nombre||'').match(/(\d+)\s*[A-Za-z]?\s*$/);return m?m[1]:null}
+
+// Asigna zona a un recorrido por nombre/destino
+function zonaDe(rc){
+  const d=(rc.destino||'').toUpperCase();
+  const n=(rc.nombre||'').toUpperCase();
+  if(n.includes('RESERO'))return 'resero';
+  if(d==='AG')return 'ag_sarmiento';
+  if(d==='CD'&&n.includes('SARMIENTO'))return 'cd_sarmiento';
+  if(d==='CD')return 'cd_comodoro'; // CD Comodoro y CD Rada Tilly van acá
+  return 'cd_comodoro'; // fallback
+}
+
 function renderRecList(recs){
   const loading=document.getElementById('rec-loading');
   const list=document.getElementById('rec-list');
   const reload=document.getElementById('btn-rec-reload');
   loading.style.display='none';
   reload.style.display='inline-block';
-  if(!recs||!recs.length){loading.style.display='block';loading.textContent='No hay recorridos disponibles.';return}
-  // Ordenar por nombre
-  recs.sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre)));
+  // Filtrar ocultos
+  ALL_RECS=(recs||[]).filter(rc=>!recOculto(rc));
+  if(!ALL_RECS.length){loading.style.display='block';loading.textContent='No hay recorridos disponibles.';return}
+  renderZonas();
+}
+
+// ── NIVEL 1: ZONAS ──
+function renderZonas(){
+  const list=document.getElementById('rec-list');
+  document.getElementById('up-sub-dyn')&&(document.getElementById('up-sub-dyn').textContent='Elegí tu zona y después tu recorrido');
+  // Contar recorridos por zona
+  const conteo={};
+  ALL_RECS.forEach(rc=>{const z=zonaDe(rc);conteo[z]=(conteo[z]||0)+1});
+  list.className='zona-grid';
   list.innerHTML='';
-  recs.forEach(rc=>{
+  ZONAS.forEach(z=>{
+    const cant=conteo[z.key]||0;
+    if(!cant)return; // no mostrar zonas vacías
     const b=document.createElement('button');
-    b.className='rec-btn';
-    b.innerHTML=`<div class="rec-ico">${esc(rc.destino||'🚌')}</div>
-      <div class="rec-info"><div class="rec-nm">${esc(rc.nombre||'Recorrido')}</div>
-      <div class="rec-dst">Tocá para cargar</div></div>`;
-    b.onclick=()=>pickRecorrido(rc);
+    b.className='zona-btn';
+    b.style.background=z.bg;b.style.borderColor=z.bd;
+    b.innerHTML=`<div class="zona-ico">🚌</div>
+      <div class="zona-nm" style="color:${z.tx}">${z.titulo}</div>
+      <div class="zona-cant" style="color:${z.tx2}">${cant} recorrido${cant!==1?'s':''}</div>`;
+    b.onclick=()=>renderRecorridosDeZona(z.key);
     list.appendChild(b);
+  });
+}
+
+// ── NIVEL 2: RECORRIDOS DE UNA ZONA ──
+function renderRecorridosDeZona(zonaKey){
+  const z=ZONAS.find(x=>x.key===zonaKey);
+  const list=document.getElementById('rec-list');
+  list.className='rec-list';
+  // Recorridos de esta zona
+  const enZona=ALL_RECS.filter(rc=>zonaDe(rc)===zonaKey);
+  // Separar padres (sin letra) y alimentadores (con letra)
+  const padres=enZona.filter(rc=>!esAlimentador(rc.nombre));
+  const alim=enZona.filter(rc=>esAlimentador(rc.nombre));
+  // Alimentadores cuyo padre está en OTRA zona (ej. Rada Tilly 06A -> Comodoro 06)
+  const alimGlobal=ALL_RECS.filter(rc=>esAlimentador(rc.nombre));
+  padres.sort((a,b)=>{
+    const na=parseInt(numeroRec(a.nombre)||'9999',10);
+    const nb=parseInt(numeroRec(b.nombre)||'9999',10);
+    if(na!==nb)return na-nb;
+    return String(a.nombre).localeCompare(String(b.nombre),'es',{numeric:true});
+  });
+
+  let h=`<button class="btn-volver-zona" onclick="renderZonas()">← Volver a zonas</button>
+    <div class="zona-titulo" style="color:${z.tx}">🚌 ${z.titulo}</div>`;
+  list.innerHTML='';
+  const cont=document.createElement('div');
+  cont.innerHTML=h;
+  list.appendChild(cont);
+
+  padres.forEach(rc=>{
+    const num=numeroRec(rc.nombre);
+    const dest=(rc.destino||'').toUpperCase();
+    // Alimentadores de este padre: mismo destino Y mismo número
+    const hijos=alimGlobal.filter(a=>numeroRec(a.nombre)===num && (a.destino||'').toUpperCase()===dest);
+    const card=document.createElement('div');
+    card.className='rec-card';
+    const btn=document.createElement('button');
+    btn.className='rec-btn';
+    btn.style.background=z.bg;btn.style.borderColor=z.bd;
+    btn.innerHTML=`<div class="rec-info"><div class="rec-nm" style="color:${z.tx}">${esc(rc.nombre)}</div>
+      <div class="rec-dst" style="color:${z.tx2}">Tocá para cargar</div></div>`;
+    btn.onclick=()=>pickRecorrido(rc);
+    card.appendChild(btn);
+    // Hijos anidados en verde
+    if(hijos.length){
+      const wrap=document.createElement('div');
+      wrap.className='alim-wrap';
+      hijos.forEach(hc=>{
+        const hb=document.createElement('button');
+        hb.className='alim-btn';
+        hb.style.background=ZONA_ALIM.bg;hb.style.borderColor=ZONA_ALIM.bd;
+        hb.innerHTML=`<div class="alim-nm" style="color:${ZONA_ALIM.tx}">↳ ${esc(hc.nombre)}</div>
+          <div class="alim-lbl" style="color:${ZONA_ALIM.tx2}">alimentador</div>`;
+        hb.onclick=()=>pickRecorrido(hc);
+        wrap.appendChild(hb);
+      });
+      card.appendChild(wrap);
+    }
+    list.appendChild(card);
   });
 }
 
