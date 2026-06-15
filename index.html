@@ -119,6 +119,27 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;color:#854d0e;margin:6px 12px 0}
 .offline-badge.show{display:flex}
 
+/* PANTALLA INTERNO (teclado numérico) */
+#sc-interno{align-items:center;justify-content:center;padding:20px 16px;background:var(--navy)}
+.int-card{width:100%;max-width:380px;text-align:center}
+.int-ico{font-size:46px;margin-bottom:6px}
+.int-title{color:#fff;font-size:21px;font-weight:800;margin-bottom:2px}
+.int-sub{color:#9fb0c4;font-size:13px;margin-bottom:18px}
+.int-display{background:#fff;border-radius:14px;height:64px;display:flex;align-items:center;justify-content:center;
+  font-size:34px;font-weight:800;color:var(--navy);letter-spacing:3px;margin-bottom:8px;min-height:64px}
+.int-display.empty{color:#c2ccd6;font-weight:600;font-size:18px;letter-spacing:0}
+.int-err{color:#fca5a5;font-size:13px;font-weight:600;height:18px;margin-bottom:8px}
+.int-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.int-key{background:rgba(255,255,255,.16);border:none;border-radius:14px;height:58px;
+  font-size:26px;font-weight:700;color:#fff;font-family:var(--f);cursor:pointer;transition:background .1s}
+.int-key:active{background:rgba(255,255,255,.34)}
+.int-key.alt{background:rgba(255,255,255,.07);font-size:22px}
+.int-continue{width:100%;background:linear-gradient(135deg,var(--amber),var(--amber2));color:#fff;border:none;
+  border-radius:14px;height:56px;font-size:18px;font-weight:800;font-family:var(--f);cursor:pointer;
+  margin-top:14px;box-shadow:0 3px 10px rgba(232,160,32,.4)}
+.int-continue:disabled{opacity:.4;box-shadow:none;cursor:default}
+.int-back{background:none;border:none;color:#9fb0c4;font-size:14px;font-family:var(--f);cursor:pointer;margin-top:12px}
+
 /* TILE CACHE OVERLAY */
 .tile-ov{position:fixed;inset:0;z-index:9999;background:rgba(30,45,62,.9);display:none;
   flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 30px;text-align:center}
@@ -328,6 +349,32 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
   </div>
 </div>
 
+<div id="sc-interno" class="screen">
+  <div class="int-card">
+    <div class="int-ico">🚌</div>
+    <div class="int-title">Número de interno</div>
+    <div class="int-sub">del colectivo que vas a usar hoy</div>
+    <div class="int-display empty" id="int-display">Tocá los números</div>
+    <div class="int-err" id="int-err"></div>
+    <div class="int-keys">
+      <button class="int-key" onclick="intKey('1')">1</button>
+      <button class="int-key" onclick="intKey('2')">2</button>
+      <button class="int-key" onclick="intKey('3')">3</button>
+      <button class="int-key" onclick="intKey('4')">4</button>
+      <button class="int-key" onclick="intKey('5')">5</button>
+      <button class="int-key" onclick="intKey('6')">6</button>
+      <button class="int-key" onclick="intKey('7')">7</button>
+      <button class="int-key" onclick="intKey('8')">8</button>
+      <button class="int-key" onclick="intKey('9')">9</button>
+      <button class="int-key alt" onclick="intClear()">C</button>
+      <button class="int-key" onclick="intKey('0')">0</button>
+      <button class="int-key alt" onclick="intBack()">⌫</button>
+    </div>
+    <button class="int-continue" id="int-continue" onclick="intConfirm()" disabled>Continuar →</button>
+    <button class="int-back" onclick="intCancel()">⬅ Volver a la lista</button>
+  </div>
+</div>
+
 <div id="sc-ov" class="screen">
   <div id="map-ov"></div>
   <div class="ov-panel">
@@ -424,6 +471,8 @@ const PENDING_KEY='petrosar_embarques_pendientes';
 // ESTADO
 // ════════════════════════════════════════════════════════
 let STOPS=[], ROUTE='', cur=0, addrs={}, routeCoords=null, navSteps=[];
+let INTERNO=''; // número de interno del colectivo, cargado por el chofer antes del recorrido
+const INTERNO_KEY='petrosar_ultimo_interno';
 let boarded={};
 let mapOv=null, mapNav=null, vehicleMk=null, vehiclePos=null;
 let watchId=null, following=true, atStop=false, paxShown=false;
@@ -434,8 +483,32 @@ const ARRIVE_M=50, DEPART_M=200;
 // SERVICE WORKER
 // ════════════════════════════════════════════════════════
 let swReg=null;
+let _updatePendiente=false; // hay una versión nueva lista para aplicar
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(r=>{swReg=r}).catch(()=>{});
+  navigator.serviceWorker.register('/sw.js').then(r=>{
+    swReg=r;
+    // Detectar cuando se instala una versión nueva del service worker
+    r.addEventListener('updatefound',()=>{
+      const nuevo=r.installing;
+      if(!nuevo)return;
+      nuevo.addEventListener('statechange',()=>{
+        // 'installed' + ya había un controller => es una ACTUALIZACIÓN (no la primera instalación)
+        if(nuevo.state==='installed' && navigator.serviceWorker.controller){
+          _updatePendiente=true;
+          aplicarUpdateSiSeguro();
+        }
+      });
+    });
+  }).catch(()=>{});
+
+  // Cuando el nuevo SW toma control, recargar una sola vez para usar la versión nueva
+  let _recargando=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(_recargando)return;
+    _recargando=true;
+    location.reload();
+  });
+
   navigator.serviceWorker.addEventListener('message',e=>{
     if(e.data?.type==='TILE_PROGRESS'){
       const p=Math.round(e.data.done/e.data.total*100);
@@ -448,6 +521,22 @@ if('serviceWorker' in navigator){
       document.getElementById('offline-badge').classList.add('show');
     }
   });
+
+  // Buscar versión nueva: al arrancar, cada 30 min, y al volver a primer plano
+  function buscarUpdate(){ if(swReg)swReg.update().catch(()=>{}) }
+  setInterval(buscarUpdate,30*60*1000);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden)buscarUpdate() });
+}
+
+// Aplica la actualización SOLO en momento seguro: en la pantalla inicial (lista de
+// recorridos), sin recorrido en curso. Nunca interrumpe un viaje.
+function aplicarUpdateSiSeguro(){
+  if(!_updatePendiente)return;
+  const enInicio=document.getElementById('sc-upload')?.classList.contains('active');
+  const sinRecorrido=!STOPS.length;
+  if(enInicio && sinRecorrido && swReg && swReg.waiting){
+    swReg.waiting.postMessage({type:'SKIP_WAITING'}); // le pide al SW activarse ya
+  }
 }
 
 // ════════════════════════════════════════════════════════
@@ -522,7 +611,18 @@ function processKML(file){
 }
 
 // Procesa el texto de un KML (lo usan tanto el archivo manual como la API)
+let _kmlPendiente=null; // texto KML a la espera del interno (carga manual)
 function processKMLText(txt,nombreFallback){
+  // Si no hay interno (ej. carga manual de KML), mostrar el teclado primero.
+  if(!INTERNO){
+    _kmlPendiente={txt,nombre:nombreFallback};
+    let ultimo='';try{ultimo=localStorage.getItem(INTERNO_KEY)||''}catch(_){}
+    _intBuffer=ultimo||'';
+    document.getElementById('int-err').textContent='';
+    intRefresh();
+    showScreen('sc-interno');
+    return;
+  }
   try{const res=parseKML(txt);
     if(!res||!res.stops.length){showErr('No se encontraron paradas');return}
     STOPS=res.stops;ROUTE=res.name||nombreFallback||'Recorrido';boarded={};addrs={};routeCoords=null;navSteps=[];cur=0;
@@ -698,7 +798,61 @@ function renderRecorridosDeZona(zonaKey){
   });
 }
 
-async function pickRecorrido(rc){
+let _recPendiente=null; // recorrido elegido, a la espera del interno
+let _intBuffer='';      // dígitos cargados en el teclado
+
+function pickRecorrido(rc){
+  // Guarda el recorrido elegido y muestra la pantalla del teclado de interno.
+  _recPendiente=rc;
+  let ultimo='';
+  try{ultimo=localStorage.getItem(INTERNO_KEY)||''}catch(_){}
+  _intBuffer=ultimo||'';
+  document.getElementById('int-err').textContent='';
+  intRefresh();
+  showScreen('sc-interno');
+}
+
+function intRefresh(){
+  const d=document.getElementById('int-display');
+  const cont=document.getElementById('int-continue');
+  if(_intBuffer){
+    d.textContent=_intBuffer;
+    d.classList.remove('empty');
+    cont.disabled=false;
+  }else{
+    d.textContent='Tocá los números';
+    d.classList.add('empty');
+    cont.disabled=true;
+  }
+}
+function intKey(n){
+  if(_intBuffer.length>=8)return; // tope razonable
+  _intBuffer+=n;
+  document.getElementById('int-err').textContent='';
+  intRefresh();
+}
+function intBack(){_intBuffer=_intBuffer.slice(0,-1);intRefresh()}
+function intClear(){_intBuffer='';intRefresh()}
+function intCancel(){_recPendiente=null;_kmlPendiente=null;_intBuffer='';showScreen('sc-upload')}
+
+function intConfirm(){
+  const interno=String(_intBuffer).trim();
+  if(!interno){document.getElementById('int-err').textContent='⚠️ Cargá el número de interno';return}
+  INTERNO=interno;
+  try{localStorage.setItem(INTERNO_KEY,interno)}catch(_){}
+  if(_kmlPendiente){
+    // Caso carga manual: ya teníamos el KML, lo procesamos ahora.
+    const k=_kmlPendiente;_kmlPendiente=null;
+    showScreen('sc-upload');
+    processKMLText(k.txt,k.nombre);
+    return;
+  }
+  const rc=_recPendiente;_recPendiente=null;
+  showScreen('sc-upload');
+  cargarRecorrido(rc);
+}
+
+async function cargarRecorrido(rc){
   const loading=document.getElementById('rec-loading');
   document.getElementById('up-err').style.display='none';
   loading.style.display='block';
@@ -776,7 +930,7 @@ function showErr(m){const e=document.getElementById('up-err');e.style.display='b
 // ════════════════════════════════════════════════════════
 async function launchApp(){
   document.getElementById('hdr-title').textContent=ROUTE;
-  document.getElementById('hdr-sub').textContent='Vista general del recorrido';
+  document.getElementById('hdr-sub').textContent=INTERNO?('Interno '+INTERNO+' · Vista general'):'Vista general del recorrido';
   document.getElementById('hdr-kpis').style.display='flex';
   document.getElementById('btn-back').style.display='inline-block';
   document.getElementById('kpi-p').textContent=STOPS.length;
@@ -795,6 +949,7 @@ function resetApp(){
   if(mapOv){mapOv.remove();mapOv=null}
   if(mapNav){mapNav.remove();mapNav=null}
   vehicleMk=null;following=true;atStop=false;paxShown=false;spokenAt={};curStepIdx=0;
+  INTERNO=''; // se vuelve a pedir en el próximo recorrido (recordando el último)
   document.getElementById('stop-list').innerHTML='';
   document.getElementById('kml-in').value='';
   document.getElementById('up-err').style.display='none';
@@ -805,6 +960,7 @@ function resetApp(){
   document.getElementById('hdr-title').textContent='PETROSAR — Chofer App';
   showScreen('sc-upload');
   loadRecList();
+  if(typeof aplicarUpdateSiSeguro==='function')aplicarUpdateSiSeguro(); // al volver a la lista, momento seguro
 }
 
 function showScreen(id){
@@ -1252,6 +1408,7 @@ function buildRows(){
       const paradaReal=rec&&rec.realStop!=null&&STOPS[rec.realStop]?STOPS[rec.realStop].name:'';
       rows.push({
         recorrido:ROUTE,
+        interno:INTERNO||'',
         parada:paradaReal||paradaAsignada,
         parada_asignada:paradaAsignada,
         parada_real:rec?paradaReal:'',
