@@ -643,7 +643,8 @@ async function loadRecList(){
   loading.style.display='block';loading.textContent='⏳ Buscando recorridos...';
   list.innerHTML='';reload.style.display='none';
   try{
-    const r=await fetch(REC_API);
+    const sep=REC_API.includes('?')?'&':'?';
+    const r=await fetch(REC_API+sep+'_t='+Date.now(),{cache:'no-store'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const recs=await r.json();
     // Guardar lista en local para verla aunque no haya señal después
@@ -858,7 +859,11 @@ async function cargarRecorrido(rc){
   loading.style.display='block';
   loading.textContent='⏳ Cargando '+(rc.nombre||'recorrido')+'...';
   try{
-    const r=await fetch(rc.kml_url);
+    // Forzar versión fresca del KML: parámetro anti-caché + no-store, para que
+    // los cambios de pasajeros/paradas se reflejen siempre (no la copia vieja).
+    const sep=rc.kml_url.includes('?')?'&':'?';
+    const url=rc.kml_url+sep+'_t='+Date.now();
+    const r=await fetch(url,{cache:'no-store'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const txt=await r.text();
     loading.style.display='none';

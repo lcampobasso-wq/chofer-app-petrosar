@@ -13,7 +13,7 @@
 //     tablets no se enteran de que hay versión nueva.
 // ════════════════════════════════════════════════════════
 
-const CACHE = 'petrosar-chofer-v3';      // ← cambiá este número en cada actualización
+const CACHE = 'petrosar-chofer-v4';      // ← cambiá este número en cada actualización
 
 // Archivos base de la app (lo que se necesita para abrir sin señal)
 const APP_FILES = [
