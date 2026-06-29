@@ -616,8 +616,7 @@ function processKMLText(txt,nombreFallback){
   // Si no hay interno (ej. carga manual de KML), mostrar el teclado primero.
   if(!INTERNO){
     _kmlPendiente={txt,nombre:nombreFallback};
-    let ultimo='';try{ultimo=localStorage.getItem(INTERNO_KEY)||''}catch(_){}
-    _intBuffer=ultimo||'';
+    _intBuffer=''; // siempre en blanco: el chofer debe escribir el interno real cada vez
     document.getElementById('int-err').textContent='';
     intRefresh();
     showScreen('sc-interno');
@@ -805,9 +804,7 @@ let _intBuffer='';      // dígitos cargados en el teclado
 function pickRecorrido(rc){
   // Guarda el recorrido elegido y muestra la pantalla del teclado de interno.
   _recPendiente=rc;
-  let ultimo='';
-  try{ultimo=localStorage.getItem(INTERNO_KEY)||''}catch(_){}
-  _intBuffer=ultimo||'';
+  _intBuffer=''; // siempre en blanco: el chofer debe escribir el interno real cada vez
   document.getElementById('int-err').textContent='';
   intRefresh();
   showScreen('sc-interno');
