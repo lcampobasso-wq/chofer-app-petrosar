@@ -930,6 +930,64 @@ function showErr(m){const e=document.getElementById('up-err');e.style.display='b
 // ════════════════════════════════════════════════════════
 // LAUNCH / RESET
 // ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// ENVÍO DE POSICIÓN GPS (para la app del pasajero - Mi Viaje)
+// Manda la ubicación de la tablet a posiciones_chofer cada ~15s.
+// Upsert por recorrido: una sola fila por recorrido, siempre la última posición.
+// ════════════════════════════════════════════════════════
+let _gpsWatchId=null, _gpsUltimoEnvio=0;
+const GPS_INTERVALO_MS=15000; // no enviar más seguido que cada 15 s
+
+function iniciarEnvioGPS(){
+  if(!ROUTE){console.warn('[gps] sin recorrido');return}
+  if(!('geolocation' in navigator)){console.warn('[gps] sin geolocalización');return}
+  detenerEnvioGPS(); // por si había uno activo
+  _gpsUltimoEnvio=0;
+  _gpsWatchId=navigator.geolocation.watchPosition(
+    (pos)=>enviarPosicionGPS(pos),
+    (err)=>console.warn('[gps] error:',err.message),
+    {enableHighAccuracy:true,maximumAge:5000,timeout:20000}
+  );
+  console.log('[gps] enviando posición para:',ROUTE);
+}
+
+async function enviarPosicionGPS(pos){
+  const ahora=Date.now();
+  if(ahora-_gpsUltimoEnvio<GPS_INTERVALO_MS)return; // no saturar
+  _gpsUltimoEnvio=ahora;
+  const fila={
+    recorrido:ROUTE,
+    interno:INTERNO||null,
+    lat:pos.coords.latitude,
+    lng:pos.coords.longitude,
+    velocidad:pos.coords.speed!=null?Math.round(pos.coords.speed*3.6):0, // m/s → km/h
+    rumbo:pos.coords.heading!=null?Math.round(pos.coords.heading):null,
+    actualizado:new Date().toISOString(),
+  };
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/posiciones_chofer?on_conflict=recorrido`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey':SB_KEY,
+        'Authorization':'Bearer '+SB_KEY,
+        'Prefer':'return=minimal,resolution=merge-duplicates'
+      },
+      body:JSON.stringify(fila)
+    });
+    if(!r.ok){const t=await r.text();console.warn('[gps] error guardando:',r.status,t);}
+    else console.log('[gps] posición enviada',fila.lat.toFixed(4),fila.lng.toFixed(4));
+  }catch(e){console.warn('[gps] excepción:',e.message||e);}
+}
+
+function detenerEnvioGPS(){
+  if(_gpsWatchId!=null){
+    navigator.geolocation.clearWatch(_gpsWatchId);
+    _gpsWatchId=null;
+    console.log('[gps] envío detenido');
+  }
+}
+
 async function launchApp(){
   document.getElementById('hdr-title').textContent=ROUTE;
   document.getElementById('hdr-sub').textContent=INTERNO?('Interno '+INTERNO+' · Vista general'):'Vista general del recorrido';
@@ -940,6 +998,7 @@ async function launchApp(){
   buildStopList();
   showScreen('sc-ov');
   flushPending(); // intenta subir embarques pendientes al cargar
+  iniciarEnvioGPS(); // empieza a enviar posición para la app del pasajero
   const r=await fetchOSRM();
   routeCoords=r.coords;navSteps=r.steps;
   buildOvMap();fetchAddrs();
@@ -948,6 +1007,7 @@ async function launchApp(){
 
 function resetApp(){
   if(watchId){navigator.geolocation.clearWatch(watchId);watchId=null}
+  detenerEnvioGPS(); // deja de enviar posición al terminar el recorrido
   if(mapOv){mapOv.remove();mapOv=null}
   if(mapNav){mapNav.remove();mapNav=null}
   vehicleMk=null;following=true;atStop=false;paxShown=false;spokenAt={};curStepIdx=0;

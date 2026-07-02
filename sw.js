@@ -6,14 +6,14 @@
 //  CÓMO ACTUALIZAR LA APP EN TODAS LAS TABLETS:
 //  1) Subí el index.html nuevo a Vercel.
 //  2) Subí la BARRA de versión de acá abajo (cambiá el número).
-//     Ej: 'petrosar-chofer-v3'  ->  'petrosar-chofer-v5'
+//     Ej: 'petrosar-chofer-v3'  ->  'petrosar-chofer-v6'
 //  3) Listo. Las tablets, al tener señal, se actualizan solas.
 //
 //  ⚠️ El número TIENE que cambiar en cada actualización, si no las
 //     tablets no se enteran de que hay versión nueva.
 // ════════════════════════════════════════════════════════
 
-const CACHE = 'petrosar-chofer-v5';      // ← cambiá este número en cada actualización
+const CACHE = 'petrosar-chofer-v6';      // ← cambiá este número en cada actualización
 
 // Archivos base de la app (lo que se necesita para abrir sin señal)
 const APP_FILES = [
