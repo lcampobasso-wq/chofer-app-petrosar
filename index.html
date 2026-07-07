@@ -951,6 +951,31 @@ function iniciarEnvioGPS(){
   console.log('[gps] enviando posición para:',ROUTE);
 }
 
+// Registra recorrido + interno en posiciones_chofer apenas arranca (con WiFi en base),
+// para que la app del pasajero vea qué colectivo lo busca, sin depender del GPS del trayecto.
+async function registrarInternoInicial(){
+  if(!ROUTE){console.warn('[interno] sin recorrido');return}
+  const fila={
+    recorrido:ROUTE,
+    interno:INTERNO||null,
+    actualizado:new Date().toISOString(),
+  };
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/posiciones_chofer?on_conflict=recorrido`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey':SB_KEY,
+        'Authorization':'Bearer '+SB_KEY,
+        'Prefer':'return=minimal,resolution=merge-duplicates'
+      },
+      body:JSON.stringify(fila)
+    });
+    if(!r.ok){const t=await r.text();console.warn('[interno] error guardando:',r.status,t);}
+    else console.log('[interno] interno registrado al inicio:',INTERNO,'recorrido:',ROUTE);
+  }catch(e){console.warn('[interno] excepción:',e.message||e);}
+}
+
 async function enviarPosicionGPS(pos){
   const ahora=Date.now();
   if(ahora-_gpsUltimoEnvio<GPS_INTERVALO_MS)return; // no saturar
@@ -998,6 +1023,7 @@ async function launchApp(){
   buildStopList();
   showScreen('sc-ov');
   flushPending(); // intenta subir embarques pendientes al cargar
+  registrarInternoInicial(); // guarda recorrido+interno YA (con WiFi en base) para la app del pasajero
   iniciarEnvioGPS(); // empieza a enviar posición para la app del pasajero
   const r=await fetchOSRM();
   routeCoords=r.coords;navSteps=r.steps;
