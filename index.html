@@ -873,6 +873,9 @@ async function cargarRecorrido(rc){
 
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+// ════════════════════════════════════════════════════════
+// PARSEO DEL KML  (con deduplicación anti-duplicados por DNI)
+// ════════════════════════════════════════════════════════
 function parseKML(txt){
   const doc=new DOMParser().parseFromString(txt,'text/xml');
   const ns='http://www.opengis.net/kml/2.2';
@@ -898,7 +901,24 @@ function parseKML(txt){
       continue;
     }
   }
-  for(const lbl of Object.keys(paxBy)){if(stopMap[lbl]){stopMap[lbl].passengers=paxBy[lbl];const fb=paxBy[lbl].find(p=>p.barrio);if(fb)stopMap[lbl].barrio=fb.barrio}}
+  // Asignar los pasajeros individuales a su parada, DEDUPLICANDO por DNI
+  // (el KML lista a cada pasajero una vez en la carpeta de empresa; nunca debe
+  //  aparecer dos veces en la misma parada).
+  for(const lbl of Object.keys(paxBy)){
+    if(stopMap[lbl]){
+      const vistos=new Set();
+      const unicos=[];
+      for(const p of paxBy[lbl]){
+        const k=(p.dni||'').replace(/\D/g,'');
+        if(k && vistos.has(k))continue;   // ya está en esta parada → saltear
+        if(k)vistos.add(k);
+        unicos.push(p);
+      }
+      stopMap[lbl].passengers=unicos;
+      const fb=unicos.find(p=>p.barrio);if(fb)stopMap[lbl].barrio=fb.barrio;
+    }
+  }
+  // Fallback SOLO para paradas que quedaron sin pasajeros (formato viejo)
   for(const pm of pms){
     const name=tx(pm,'name'),desc=tx(pm,'description');
     const sm=name.match(/^Parada\s*(\d+)\s*:/i);if(!sm)continue;
@@ -909,7 +929,28 @@ function parseKML(txt){
     const dash=desc.indexOf('—');
     const after=dash>=0?dash+1:desc.indexOf(':')+1;if(after<=0)continue;
     const str=desc.slice(after);const re=/([A-Za-záéíóúÁÉÍÓÚñÑüÜ ,.]+?)\s*\((\d+)\)\s*(?:\[([^\]]+)\])?/g;let m;
-    while((m=re.exec(str))!==null)stopMap[lbl].passengers.push({name:tcase(m[1].replace(/,/g,' ').replace(/\s+/g,' ').trim()),dni:fmtDni(m[2]),barrio:'',empresa:(m[3]||'').trim()});
+    const vistosFb=new Set();
+    while((m=re.exec(str))!==null){
+      const dniFb=fmtDni(m[2]);
+      const k=(dniFb||'').replace(/\D/g,'');
+      if(k && vistosFb.has(k))continue;   // no repetir dentro del fallback
+      if(k)vistosFb.add(k);
+      stopMap[lbl].passengers.push({name:tcase(m[1].replace(/,/g,' ').replace(/\s+/g,' ').trim()),dni:dniFb,barrio:'',empresa:(m[3]||'').trim()});
+    }
+  }
+  // SEGURIDAD FINAL: eliminar cualquier DNI duplicado que haya quedado en TODO el
+  // recorrido (un mismo pasajero no puede estar en dos paradas del mismo KML).
+  // Se conserva la PRIMERA aparición.
+  const vistosGlobal=new Set();
+  for(const lbl of Object.keys(stopMap)){
+    const s=stopMap[lbl];
+    s.passengers=s.passengers.filter(p=>{
+      const k=(p.dni||'').replace(/\D/g,'');
+      if(!k)return true;
+      if(vistosGlobal.has(k))return false;
+      vistosGlobal.add(k);
+      return true;
+    });
   }
   return{name:rName,stops:Object.values(stopMap).sort((a,b)=>a.id-b.id)};
 }
