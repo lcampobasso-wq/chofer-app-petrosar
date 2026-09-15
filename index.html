@@ -93,6 +93,10 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
 
 .btn-rec-reload{background:var(--card);color:var(--navy);border:2px solid var(--border);
   border-radius:11px;padding:11px 24px;font-size:15px;font-weight:600;font-family:var(--f);cursor:pointer;margin-bottom:8px}
+.btn-rec-reload.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.viz-banner{display:none;align-items:center;gap:8px;background:#e0f2fe;border:1px solid #7dd3fc;
+  border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;color:#0369a1;margin-bottom:10px}
+.viz-banner.show{display:flex}
 .up-manual{margin-top:16px;text-align:left;border-top:1px solid var(--border);padding-top:14px}
 .up-manual summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);padding:6px 0}
 
@@ -331,10 +335,14 @@ body{font-family:var(--f);background:var(--bg);color:#1a202c;
     <div class="up-icon">🚌</div>
     <div class="up-title">App del Chofer</div>
     <div class="up-sub" id="up-sub-dyn">Elegí tu zona y después tu recorrido. Necesitás WiFi (en la base).</div>
+    <div class="viz-banner" id="viz-banner">👁 Modo visualización — tocá un recorrido para verlo en el mapa, sin iniciarlo</div>
 
     <div id="rec-loading" style="padding:20px;color:var(--muted);font-size:16px">⏳ Buscando recorridos...</div>
     <div id="rec-list" class="rec-list"></div>
-    <button class="btn-rec-reload" id="btn-rec-reload" onclick="loadRecList()" style="display:none">🔄 Recargar lista</button>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-rec-reload" id="btn-rec-reload" onclick="loadRecList()" style="display:none">🔄 Recargar lista</button>
+      <button class="btn-rec-reload" id="btn-visualizacion" onclick="toggleModoVisualizacion()" style="display:none">👁 Visualización de recorridos</button>
+    </div>
 
     <details class="up-manual">
       <summary>📁 Cargar archivo KML manual (respaldo)</summary>
@@ -708,8 +716,10 @@ function renderRecList(recs){
   const loading=document.getElementById('rec-loading');
   const list=document.getElementById('rec-list');
   const reload=document.getElementById('btn-rec-reload');
+  const viz=document.getElementById('btn-visualizacion');
   loading.style.display='none';
   reload.style.display='inline-block';
+  if(viz)viz.style.display='inline-block';
   // Filtrar ocultos
   ALL_RECS=(recs||[]).filter(rc=>!recOculto(rc));
   if(!ALL_RECS.length){loading.style.display='block';loading.textContent='No hay recorridos disponibles.';return}
@@ -801,7 +811,27 @@ function renderRecorridosDeZona(zonaKey){
 let _recPendiente=null; // recorrido elegido, a la espera del interno
 let _intBuffer='';      // dígitos cargados en el teclado
 
+// ════════════════════════════════════════════════════════
+// MODO VISUALIZACIÓN (solo consulta, para coordinadores)
+// No pide interno, no permite iniciar el recorrido. Solo muestra el mapa
+// con las paradas y, al tocar una, quién sube y a qué hora.
+// ════════════════════════════════════════════════════════
+let MODO_VIZ=false;
+
+function toggleModoVisualizacion(){
+  MODO_VIZ=!MODO_VIZ;
+  const btn=document.getElementById('btn-visualizacion');
+  const banner=document.getElementById('viz-banner');
+  if(btn)btn.classList.toggle('on',MODO_VIZ);
+  if(banner)banner.classList.toggle('show',MODO_VIZ);
+}
+
 function pickRecorrido(rc){
+  if(MODO_VIZ){
+    // Modo consulta: no pide interno, va directo al mapa de solo lectura.
+    cargarRecorridoVisualizacion(rc);
+    return;
+  }
   // Guarda el recorrido elegido y muestra la pantalla del teclado de interno.
   _recPendiente=rc;
   _intBuffer=''; // siempre en blanco: el chofer debe escribir el interno real cada vez
@@ -871,6 +901,48 @@ async function cargarRecorrido(rc){
   }
 }
 
+// ── Carga en modo VISUALIZACIÓN: descarga el KML y va directo al mapa de
+// solo lectura, sin pedir interno y sin habilitar el inicio del recorrido. ──
+async function cargarRecorridoVisualizacion(rc){
+  const loading=document.getElementById('rec-loading');
+  document.getElementById('up-err').style.display='none';
+  loading.style.display='block';
+  loading.textContent='⏳ Cargando '+(rc.nombre||'recorrido')+'...';
+  try{
+    const sep=rc.kml_url.includes('?')?'&':'?';
+    const url=rc.kml_url+sep+'_t='+Date.now();
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();
+    const res=parseKML(txt);
+    loading.style.display='none';
+    if(!res||!res.stops.length){showErr('No se encontraron paradas');return}
+    STOPS=res.stops;ROUTE=res.name||rc.nombre||'Recorrido';boarded={};addrs={};routeCoords=null;navSteps=[];cur=0;
+    launchVisualizacion();
+  }catch(e){
+    loading.style.display='block';
+    loading.innerHTML='⚠️ No se pudo bajar el recorrido. ¿Tenés señal? '+e.message;
+  }
+}
+
+async function launchVisualizacion(){
+  document.getElementById('hdr-title').textContent=ROUTE+' (visualización)';
+  document.getElementById('hdr-sub').textContent='Modo consulta · sin interno · '+STOPS.length+' paradas';
+  document.getElementById('hdr-kpis').style.display='flex';
+  document.getElementById('btn-back').style.display='inline-block';
+  document.getElementById('kpi-p').textContent=STOPS.length;
+  document.getElementById('kpi-x').textContent=STOPS.reduce((s,p)=>s+p.passengers.length,0);
+  buildStopListVisualizacion();
+  showScreen('sc-ov');
+  // Ocultar el botón de iniciar recorrido: esto es solo consulta.
+  const btnStart=document.querySelector('#sc-ov .btn-start');
+  if(btnStart)btnStart.style.display='none';
+  const r=await fetchOSRM();
+  routeCoords=r.coords;navSteps=r.steps;
+  buildOvMapVisualizacion();
+  fetchAddrs();
+}
+
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // ════════════════════════════════════════════════════════
@@ -890,7 +962,14 @@ function parseKML(txt){
     if(pm.getElementsByTagNameNS(ns,'LineString').length||pm.getElementsByTagName('LineString').length)continue;
     if(/^Base:/i.test(name)||/^Destino/i.test(name))continue;
     const sm=name.match(/^Parada\s*(\d+)\s*:/i);
-    if(sm){const id=parseInt(sm[1]),lbl='Parada '+id;if(!stopMap[lbl])stopMap[lbl]={id,name:lbl,lat,lng,barrio:'',passengers:[]};continue}
+    if(sm){
+      const id=parseInt(sm[1]),lbl='Parada '+id;
+      // El horario viene en el título: "Parada 12: Parada 12 — 🕒 05:55"
+      const hm=name.match(/🕒\s*([0-9]{1,2}:[0-9]{2})/);
+      const horario=hm?hm[1]:'';
+      if(!stopMap[lbl])stopMap[lbl]={id,name:lbl,lat,lng,barrio:'',time:horario,passengers:[]};
+      continue;
+    }
     if(/Legajo\s*:/i.test(desc)){
       const dni=(desc.match(/Legajo\s*:\s*([^|\n]+)/i)||[,''])[1].trim();
       const bar=(desc.match(/Barrio\s*:\s*([^|\n]+)/i)||[,''])[1].trim().replace(/^-$/,'');
@@ -1087,6 +1166,9 @@ function resetApp(){
   document.getElementById('fin-overlay').classList.remove('show');
   document.getElementById('offline-badge').classList.remove('show');
   document.getElementById('hdr-title').textContent='PETROSAR — Chofer App';
+  cerrarDetalleParadaViz(); // por si quedó abierto el popup de una parada
+  const btnStart=document.querySelector('#sc-ov .btn-start');
+  if(btnStart)btnStart.style.display=''; // restaurar el botón INICIAR para el próximo recorrido normal
   showScreen('sc-upload');
   loadRecList();
   if(typeof aplicarUpdateSiSeguro==='function')aplicarUpdateSiSeguro(); // al volver a la lista, momento seguro
@@ -1197,6 +1279,28 @@ function buildOvMap(){
   };
   if(el.offsetWidth>0){init()}else{const ro=new ResizeObserver(()=>{if(el.offsetWidth>0){ro.disconnect();init()}});ro.observe(el)}
 }
+
+// ── Mapa en MODO VISUALIZACIÓN: igual al de siempre, pero al tocar una parada
+// abre el popup de detalle (horario + quién sube) en vez de iniciar navegación. ──
+function buildOvMapVisualizacion(){
+  const el=document.getElementById('map-ov');
+  const init=()=>{
+    if(mapOv){mapOv.remove();mapOv=null}
+    mapOv=L.map(el,{zoomControl:true,attributionControl:true});
+    L.tileLayer('https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(mapOv);
+    if(routeCoords?.length>1){L.polyline(routeCoords,{color:'#1e2d3e',weight:5,opacity:.85}).addTo(mapOv);addArrows(mapOv,routeCoords)}
+    STOPS.forEach((s,i)=>{
+      if(!s.lat||!s.lng)return;
+      const ic=L.divIcon({html:`<div style="width:34px;height:34px;border-radius:50%;background:#1e2d3e;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,sans-serif;font-weight:800;font-size:15px;border:3px solid #e8a020;box-shadow:0 2px 8px rgba(0,0,0,.4)">${s.id}</div>`,className:'',iconSize:[34,34],iconAnchor:[17,17]});
+      L.marker([s.lat,s.lng],{icon:ic}).addTo(mapOv)
+        .on('click',()=>mostrarDetalleParadaViz(i))
+        .bindTooltip(`P${s.id}${s.time?' · 🕒 '+s.time:''} · ${s.passengers.length} pax`,{direction:'top'});
+    });
+    const b=L.latLngBounds(STOPS.filter(s=>s.lat&&s.lng).map(s=>[s.lat,s.lng]));mapOv.fitBounds(b,{padding:[40,40]});
+    setTimeout(()=>mapOv.invalidateSize(),300);
+  };
+  if(el.offsetWidth>0){init()}else{const ro=new ResizeObserver(()=>{if(el.offsetWidth>0){ro.disconnect();init()}});ro.observe(el)}
+}
 function addArrows(map,coords){
   const step=Math.max(1,Math.floor(coords.length/12));
   for(let i=step;i<coords.length-1;i+=step){const p1=coords[i-1],p2=coords[i];const ang=Math.atan2(p2[1]-p1[1],p2[0]-p1[0])*180/Math.PI;L.marker(coords[i],{icon:L.divIcon({html:`<div style="transform:rotate(${ang}deg);font-size:14px;color:#e8a020;text-shadow:0 0 3px rgba(0,0,0,.6);line-height:1">➤</div>`,className:'',iconSize:[14,14],iconAnchor:[7,7]}),interactive:false}).addTo(map)}
@@ -1210,6 +1314,64 @@ function buildStopList(){
   const tot=STOPS.reduce((s,p)=>s+p.passengers.length,0);
   document.getElementById('ov-title').textContent=`🗺 ${STOPS.length} paradas · ${tot} pasajeros`;
   STOPS.forEach((s,i)=>{const r=document.createElement('div');r.className='stop-row';const ok=s.passengers.filter((_,pi)=>boarded[i+'-'+pi]).length;const done=ok===s.passengers.length&&s.passengers.length>0;r.innerHTML=`<div class="s-badge${done?' done':''}">${done?'✓':s.id}</div><div class="s-info"><div class="s-name">${s.name}</div><div class="s-addr" id="sa-${i}">📍 ${s.barrio||'Comodoro Rivadavia'}</div></div><div class="s-pax">${ok}/${s.passengers.length}</div>`;r.onclick=()=>{cur=i;startNav()};c.appendChild(r)});
+}
+
+// ── Versión de la lista de paradas para MODO VISUALIZACIÓN: al tocar una
+// parada se abre el detalle (horario + quién sube), nunca inicia navegación. ──
+function buildStopListVisualizacion(){
+  const c=document.getElementById('stop-list');c.innerHTML='';
+  const tot=STOPS.reduce((s,p)=>s+p.passengers.length,0);
+  document.getElementById('ov-title').textContent=`👁 ${STOPS.length} paradas · ${tot} pasajeros`;
+  STOPS.forEach((s,i)=>{
+    const r=document.createElement('div');r.className='stop-row';
+    r.innerHTML=`<div class="s-badge">${s.id}</div><div class="s-info"><div class="s-name">${s.name}${s.time?' · 🕒 '+s.time:''}</div><div class="s-addr" id="sa-${i}">📍 ${s.barrio||'Comodoro Rivadavia'}</div></div><div class="s-pax">${s.passengers.length}</div>`;
+    r.onclick=()=>mostrarDetalleParadaViz(i);
+    c.appendChild(r);
+  });
+}
+
+// ── Popup de detalle de una parada: nombre, horario y quién sube (nombre + empresa). ──
+function mostrarDetalleParadaViz(i){
+  const s=STOPS[i];if(!s)return;
+  let modal=document.getElementById('viz-parada-modal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='viz-parada-modal';
+    modal.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(30,45,62,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML=`<div style="background:#fff;border-radius:18px;max-width:440px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)">
+      <div id="viz-parada-hdr" style="background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:16px 18px;border-radius:18px 18px 0 0;display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <div id="viz-parada-nombre" style="font-size:20px;font-weight:800"></div>
+          <div id="viz-parada-hora" style="font-size:14px;opacity:.85;margin-top:2px"></div>
+        </div>
+        <button onclick="cerrarDetalleParadaViz()" style="background:rgba(255,255,255,.18);border:none;color:#fff;width:30px;height:30px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
+      </div>
+      <div id="viz-parada-lista" style="padding:8px 6px"></div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click',e=>{if(e.target===modal)cerrarDetalleParadaViz()});
+  }
+  document.getElementById('viz-parada-nombre').textContent=s.name;
+  document.getElementById('viz-parada-hora').textContent=(s.time?'🕒 '+s.time:'Sin horario asignado')+' · '+s.passengers.length+' pasajero'+(s.passengers.length!==1?'s':'');
+  const lista=document.getElementById('viz-parada-lista');
+  if(!s.passengers.length){
+    lista.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted)">Sin pasajeros asignados</div>';
+  }else{
+    lista.innerHTML=s.passengers.map(p=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid #eee">
+        <div style="width:42px;height:42px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--navy);flex-shrink:0">${(p.name||'?')[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:700;text-transform:capitalize">${p.name}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">DNI ${p.dni}${p.barrio?' · '+p.barrio:''}</div>
+          ${p.empresa?`<div style="font-size:12px;color:#854d0e;background:#fef3c7;border-radius:5px;padding:2px 8px;margin-top:3px;display:inline-block;font-weight:700">🏢 ${p.empresa}</div>`:''}
+        </div>
+      </div>`).join('');
+  }
+  modal.style.display='flex';
+}
+function cerrarDetalleParadaViz(){
+  const modal=document.getElementById('viz-parada-modal');
+  if(modal)modal.style.display='none';
 }
 
 // ════════════════════════════════════════════════════════
